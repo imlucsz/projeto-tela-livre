@@ -988,8 +988,8 @@ Este projeto é desenvolvido para fins educacionais e de pesquisa, como parte do
 Para dúvidas, sugestões ou reportar bugs, abra uma **Issue** no repositório ou entre em contato com:
 
 - **Gerente de Projeto:** Luiz Gustavo (Luizsx-x)
-- **Email:** [seu-email@instituição.edu]
-- **Discord:** [link do servidor]
+- **Email:** [Lucas.souza74@alunos.cps.gov.br]
+
 
 ---
 
