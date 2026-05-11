@@ -1,0 +1,139 @@
+# ============================================
+# Dependencies
+# ============================================
+node_modules/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+.pnp
+.pnp.js
+
+# ============================================
+# Next.js & Build
+# ============================================
+.next/
+out/
+build/
+dist/
+.swc/
+
+# ============================================
+# Environment Variables (SENSITIVE)
+# ============================================
+.env
+.env.local
+.env.*.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# ============================================
+# Vercel
+# ============================================
+.vercel/
+
+# ============================================
+# Logs & Debug
+# ============================================
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+*.log
+*.logs
+
+# ============================================
+# Operating System
+# ============================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# ============================================
+# IDE & Editor
+# ============================================
+.vscode/
+.vscode-insiders/
+.idea/
+.idea_modules/
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+.classpath
+.settings/
+.c9/
+*.sublime-workspace
+*.sublime-project
+.netrc
+
+# ============================================
+# IDE - JetBrains
+# ============================================
+*.iml
+.idea/
+*.iws
+*.ipr
+*.iml
+modules.xml
+.idea/misc.xml
+.idea/modules.xml
+
+# ============================================
+# Testing
+# ============================================
+coverage/
+.nyc_output/
+*.lcov
+
+# ============================================
+# Runtime & Process Management
+# ============================================
+.pm2/
+pm2.json
+
+# ============================================
+# Misc
+# ============================================
+.cache/
+.eslintcache
+.turbo/
+turbo.json.bak
+.v0-trash/
+.snowflake/
+__v0_runtime_loader.js
+__v0_devtools.tsx
+__v0_jsx-dev-runtime.ts
+next.user-config.*
+
+# ============================================
+# Local Development
+# ============================================
+.tmp/
+.temp/
+.local/
+*.local
+
+# ============================================
+# Database
+# ============================================
+*.db
+*.sqlite
+*.sqlite3
+data/
+
+# ============================================
+# Backup Files
+# ============================================
+*.bak
+*.backup
+*.tmp
+*~
+*.swp
+*.env.local
