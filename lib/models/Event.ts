@@ -1,5 +1,17 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
+export enum EventCategory {
+  CINEMA = 'cinema',
+  OFICINAS = 'oficinas',
+  PROJETOS = 'projetos'
+}
+
+export interface ImpactData {
+  people: number;
+  communities: number;
+  sessions: number;
+}
+
 export interface IEvent extends Document {
   title: string;
   description: string;
@@ -7,84 +19,133 @@ export interface IEvent extends Document {
   location: string;
   address: string;
   image?: string;
-  category: 'cinema' | 'oficinas' | 'projetos';
-  createdBy: mongoose.Types.ObjectId; // ONG User ID
+  category: EventCategory | string;
+  createdBy: mongoose.Types.ObjectId;
   approved: boolean;
   featured: boolean;
-  participants: mongoose.Types.ObjectId[]; // Users
-  volunteers: mongoose.Types.ObjectId[]; // Users
-  impact?: {
-    people: number;
-    communities: number;
-    sessions: number;
-  };
+  participants: mongoose.Types.ObjectId[];
+  volunteers: mongoose.Types.ObjectId[];
+  impact: ImpactData;
   createdAt: Date;
   updatedAt: Date;
 }
 
-const EventSchema = new Schema<IEvent>({
-  title: {
-    type: String,
-    required: [true, 'Título é obrigatório'],
-    trim: true,
-    maxlength: [100, 'Título muito longo']
+const ImpactSchema = new Schema<ImpactData>(
+  {
+    people: {
+      type: Number,
+      default: 0,
+      min: [0, 'Número de pessoas não pode ser negativo']
+    },
+    communities: {
+      type: Number,
+      default: 0,
+      min: [0, 'Número de comunidades não pode ser negativo']
+    },
+    sessions: {
+      type: Number,
+      default: 0,
+      min: [0, 'Número de sessões não pode ser negativo']
+    }
   },
-  description: {
-    type: String,
-    required: [true, 'Descrição é obrigatória'],
-    maxlength: [1000, 'Descrição muito longa']
+  { _id: false }
+);
+
+const EventSchema = new Schema<IEvent>(
+  {
+    title: {
+      type: String,
+      required: [true, 'Título é obrigatório'],
+      trim: true,
+      maxlength: [100, 'Título não pode exceder 100 caracteres']
+    },
+    description: {
+      type: String,
+      trim: true,
+      maxlength: [1000, 'Descrição não pode exceder 1000 caracteres'],
+      default: ''
+    },
+    date: {
+      type: Date,
+      required: [true, 'Data do evento é obrigatória']
+    },
+    location: {
+      type: String,
+      trim: true,
+      maxlength: [150, 'Local não pode exceder 150 caracteres'],
+      default: ''
+    },
+    address: {
+      type: String,
+      trim: true,
+      maxlength: [300, 'Endereço não pode exceder 300 caracteres'],
+      default: ''
+    },
+    image: {
+      type: String,
+      default: '',
+      match: [
+        /^(https?:\/\/.+\.(jpg|jpeg|png|gif|webp))|(^$)/i,
+        'URL da imagem deve ser um link válido (http/https)'
+      ]
+    },
+    category: {
+      type: String,
+      enum: {
+        values: [EventCategory.CINEMA, EventCategory.OFICINAS, EventCategory.PROJETOS],
+        message: 'Categoria deve ser: cinema, oficinas ou projetos'
+      },
+      required: [true, 'Categoria é obrigatória'],
+      default: EventCategory.CINEMA
+    },
+    createdBy: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      required: [true, 'ID do criador é obrigatório']
+    },
+    approved: {
+      type: Boolean,
+      default: false,
+      index: true
+    },
+    featured: {
+      type: Boolean,
+      default: false,
+      index: true
+    },
+    impact: {
+      type: ImpactSchema,
+      default: () => ({
+        people: 0,
+        communities: 0,
+        sessions: 0
+      })
+    },
+    participants: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: 'User',
+        default: []
+      }
+    ],
+    volunteers: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: 'User',
+        default: []
+      }
+    ]
   },
-  date: {
-    type: Date,
-    required: [true, 'Data é obrigatória']
-  },
-  location: {
-    type: String,
-    required: [true, 'Local é obrigatório'],
-    trim: true
-  },
-  address: {
-    type: String,
-    required: [true, 'Endereço é obrigatório']
-  },
-  image: {
-    type: String,
-    default: ''
-  },
-  category: {
-    type: String,
-    enum: ['cinema', 'oficinas', 'projetos'],
-    required: true
-  },
-  createdBy: {
-    type: Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
-  },
-  approved: {
-    type: Boolean,
-    default: false
-  },
-  featured: {
-    type: Boolean,
-    default: false
-  },
-  participants: [{
-    type: Schema.Types.ObjectId,
-    ref: 'User'
-  }],
-  volunteers: [{
-    type: Schema.Types.ObjectId,
-    ref: 'User'
-  }],
-  impact: {
-    people: { type: Number, default: 0 },
-    communities: { type: Number, default: 0 },
-    sessions: { type: Number, default: 0 }
+  {
+    timestamps: true
   }
-}, {
-  timestamps: true
-});
+);
+
+// Índices para otimizar queries
+EventSchema.index({ createdBy: 1, approved: 1 });
+EventSchema.index({ category: 1, approved: 1 });
+EventSchema.index({ date: 1 });
+EventSchema.index({ featured: 1, approved: 1 });
 
 const Event = mongoose.models.Event || mongoose.model<IEvent>('Event', EventSchema);
 

@@ -1,10 +1,23 @@
 "use client";
 
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { CinemaDashboard } from "@/components/dashboard/cinema-dashboard";
+import { useEffect } from "react";
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
+  const router = useRouter();
+
+  useEffect(() => {
+    // Verificação de role (segurança extra)
+    if (status === "authenticated") {
+      const userRole = (session?.user as any)?.role || 'USER';
+      if (userRole !== 'ADMIN' && userRole !== 'NGO') {
+        router.push('/');
+      }
+    }
+  }, [session, status, router]);
 
   if (status === "loading") {
     return (
@@ -14,7 +27,13 @@ export default function DashboardPage() {
     );
   }
 
-  // Se chegou aqui sem sessão, o middleware já redireciona
-  // Renderiza o novo dashboard cinema
+  // Se usuário sem permissão, não renderiza
+  if (status === "authenticated") {
+    const userRole = (session?.user as any)?.role || 'USER';
+    if (userRole !== 'ADMIN' && userRole !== 'NGO') {
+      return null;
+    }
+  }
+
   return <CinemaDashboard />;
 }

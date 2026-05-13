@@ -1,42 +1,55 @@
 import NextAuth from 'next-auth'
-import Credentials from 'next-auth/providers/credentials'
-import bcrypt from 'bcryptjs'
-import { isValidRole } from '@/lib/constants'
+import CredentialsProvider from 'next-auth/providers/credentials'
+import GoogleProvider from 'next-auth/providers/google'
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
-    Credentials({
+    // Google OAuth - apenas se estiver configurado
+    ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET ? [
+      GoogleProvider({
+        clientId: process.env.GOOGLE_CLIENT_ID,
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      })
+    ] : []),
+
+    // Credentials provider
+    CredentialsProvider({
       credentials: {
         email: { label: 'Email', type: 'email' },
         password: { label: 'Senha', type: 'password' }
       },
       async authorize(credentials) {
+        // Este callback roda no Node.js Runtime, então é seguro usar Node.js modules
         if (!credentials?.email || !credentials?.password) {
-          throw new Error('Email e senha são obrigatórios')
+          return null
         }
 
-        const { connectDB } = await import('@/lib/mongodb')
-        const User = (await import('@/lib/models/User')).default
-        const bcrypt = await import('bcryptjs')
+        try {
+          const { connectDB } = await import('@/lib/mongodb')
+          const User = (await import('@/lib/models/User')).default
 
-        await connectDB()
+          await connectDB()
 
-        const user = await User.findOne({ email: (credentials.email as string).toLowerCase().trim() })
-        if (!user) {
-          throw new Error('Nenhum usuário encontrado')
-        }
+          const user = await User.findOne({ email: (credentials.email as string).toLowerCase().trim() })
+          if (!user) {
+            return null
+          }
 
-        const isPasswordValid = await user.comparePassword(credentials.password as string)
-        if (!isPasswordValid) {
-          throw new Error('Senha inválida')
-        }
+          const isPasswordValid = await user.comparePassword(credentials.password as string)
+          if (!isPasswordValid) {
+            return null
+          }
 
-        return {
-          id: user._id.toString(),
-          name: user.name,
-          email: user.email,
-          image: user.image,
-          role: user.role
+          return {
+            id: user._id.toString(),
+            name: user.name,
+            email: user.email,
+            image: user.image,
+            role: user.role
+          }
+        } catch (error) {
+          console.error('Auth error:', error)
+          return null
         }
       }
     })
@@ -52,29 +65,32 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   },
 
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, account }) {
+      // Credentiais provider - user é retornado do authorize
       if (user) {
         token.id = user.id
         token.role = user.role
       }
+
+      // OAuth - não fazer operações de DB aqui (roda em Edge Runtime)
+      // Apenas guardar dados que vieram do provider
+      if (account?.provider === 'google' && user) {
+        token.id = user.id
+        token.role = user.role
+      }
+
       return token
     },
 
     async session({ session, token }) {
-      if (token) {
-        session.user.id = token.id as string
-        // Usar role do token (rápido, Edge Runtime OK)
-        // Para verificação precisa do banco, use /api/auth/verify-role
-        if (typeof token.role === 'string' && isValidRole(token.role)) {
-          session.user.role = token.role
-        } else {
-          session.user.role = 'USER'
-        }
+      if (token && session.user) {
+        session.user.id = (token.id as string) || ''
+        session.user.role = (token.role as string) || 'USER'
       }
       return session
     }
   },
 
-  secret: process.env.NEXTAUTH_SECRET!
+  secret: process.env.NEXTAUTH_SECRET
 })
 

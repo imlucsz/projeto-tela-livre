@@ -4,19 +4,26 @@ import type { NextRequest } from 'next/server'
 
 // 🔐 Middleware protegido com NextAuth
 export default auth((req) => {
-  const isProtectedRoute = req.nextUrl.pathname.startsWith('/dashboard') || 
-                          req.nextUrl.pathname.startsWith('/profile')
-  
+  const isDashboardRoute = req.nextUrl.pathname.startsWith('/dashboard')
+  const isProfileRoute = req.nextUrl.pathname.startsWith('/profile')
   const isLoginPage = req.nextUrl.pathname === '/login'
   const isRegisterPage = req.nextUrl.pathname === '/register'
 
-  // ✅ Se tá logado e tenta ir para login/register → redireciona para dashboard
-  if ((isLoginPage || isRegisterPage) && req.auth) {
-    return NextResponse.redirect(new URL('/dashboard', req.url))
+  // ✅ Dashboard - apenas ADMIN e NGO
+  if (isDashboardRoute && req.auth) {
+    const userRole = (req.auth.user as any)?.role || 'USER'
+    if (userRole !== 'ADMIN' && userRole !== 'NGO') {
+      return NextResponse.redirect(new URL('/', req.url))
+    }
   }
 
-  // ✅ Se tá no protectedRoute e SEM autenticação → redireciona para login
-  if (isProtectedRoute && !req.auth) {
+  // ✅ Se tá logado e tenta ir para login/register → redireciona para home
+  if ((isLoginPage || isRegisterPage) && req.auth) {
+    return NextResponse.redirect(new URL('/', req.url))
+  }
+
+  // ✅ Se tá em rota protegida e SEM autenticação → redireciona para login
+  if ((isDashboardRoute || isProfileRoute) && !req.auth) {
     return NextResponse.redirect(new URL('/login', req.url))
   }
 
