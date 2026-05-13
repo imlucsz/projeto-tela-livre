@@ -1,9 +1,7 @@
-"use client";
-
-import { useState, useEffect } from "react";
-import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
+import { auth } from "@/auth";
+
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -70,20 +68,48 @@ function getInitials(name?: string | null) {
     .slice(0, 2);
 }
 
-export function CinemaDashboard() {
-  const { data: session, status } = useSession();
-  const [search, setSearch] = useState("");
-  const [selectedEvent, setSelectedEvent] = useState(null);
-  const [events, setEvents] = useState<Session[]>([]);
-  const [loading, setLoading] = useState(true);
+type MetricsResponse = {
+  success: boolean;
+  data?: {
+    totalPeople: number;
+    totalSessions: number;
+  };
+};
 
-  // Verifica role do usuário
-  const isAdmin = session?.user?.role === 'ADMIN';
-  const isOng = session?.user?.role === 'NGO';
-  const isUser = session?.user?.role === 'USER';
-  
-  // Se é USER, mostra aviso
+async function getMetrics(): Promise<{ totalPeople: number; totalSessions: number } | null> {
+  try {
+    const res = await fetch("/api/metrics", {
+      // Revalida em intervalos para performance sem ficar sempre “ao vivo”
+      next: { revalidate: 60 },
+      cache: "force-cache",
+    });
+
+    if (!res.ok) return null;
+    const json = (await res.json()) as MetricsResponse;
+    if (!json?.success || !json?.data) return null;
+
+    return {
+      totalPeople: json.data.totalPeople ?? 0,
+      totalSessions: json.data.totalSessions ?? 0,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export async function CinemaDashboard() {
+  const session = await auth();
+
+  const isAdmin = session?.user?.role === "ADMIN";
+  const isOng = session?.user?.role === "NGO";
+  const isUser = session?.user?.role === "USER";
   const showUserWarning = isUser;
+
+  const metrics = await getMetrics();
+
+  const pessoasImpactadas = metrics?.totalPeople ?? null;
+  const sessoesRealizadas = metrics?.totalSessions ?? null;
+
 
   // Dados padrão enquanto carrega
   const defaultSessions: Session[] = [
@@ -129,12 +155,26 @@ export function CinemaDashboard() {
     },
   ];
 
+  const formatNumber = (n: number) => n.toLocaleString("pt-BR");
   const stats: StatCard[] = [
-    { title: "Pessoas Impactadas", value: "2.847", change: "+12% este mês", icon: Users, color: "text-amber-400" },
-    { title: "Sessões Realizadas", value: "156", change: "+8 esta semana", icon: Film, color: "text-red-400" },
+    {
+      title: "Pessoas Impactadas",
+      value: pessoasImpactadas === null ? "—" : formatNumber(pessoasImpactadas),
+      change: pessoasImpactadas === null ? "Métrica indisponível" : "+12% este mês",
+      icon: Users,
+      color: "text-amber-400",
+    },
+    {
+      title: "Sessões Realizadas",
+      value: sessoesRealizadas === null ? "—" : formatNumber(sessoesRealizadas),
+      change: sessoesRealizadas === null ? "Métrica indisponível" : "+8 esta semana",
+      icon: Film,
+      color: "text-red-400",
+    },
     { title: "Filmes no Acervo", value: "89", change: "+5 novos", icon: Video, color: "text-amber-300" },
     { title: "Próximos Eventos", value: "24", change: "Este mês", icon: Calendar, color: "text-red-300" },
   ];
+
 
   const communities: CommunityReach[] = [
     { name: "Zona Leste - SP", progress: 85, color: "from-amber-400 to-red-500" },
@@ -163,18 +203,8 @@ export function CinemaDashboard() {
     { icon: MapPin, label: "Locais", href: "/dashboard/locations" },
   ];
 
-  useEffect(() => {
-    setEvents(defaultSessions);
-    setLoading(false);
-  }, []);
+  const events = defaultSessions;
 
-  if (status === "loading") {
-    return (
-      <div className="h-screen bg-black flex items-center justify-center">
-        <div className="text-white">Carregando...</div>
-      </div>
-    );
-  }
 
   return (
     <div className="h-screen relative overflow-hidden bg-black">
@@ -331,16 +361,16 @@ export function CinemaDashboard() {
                   Bem-vindo ao Tela Livre - Transformando vidas através do cinema
                 </p>
               </div>
-              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-4">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-amber-200/40 h-4 w-4" />
                   <Input
                     placeholder="Buscar filmes, sessões..."
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
+                    defaultValue=""
                     className="pl-10 bg-black/20 border border-amber-500/20 rounded-xl text-white placeholder:text-amber-200/40 focus:border-amber-500/40 focus:bg-black/30"
                   />
                 </div>
+
                 <Button
                   size="icon"
                   variant="ghost"
