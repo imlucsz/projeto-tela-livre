@@ -29,14 +29,6 @@ const DEFAULT_CATEGORIES = [
   'Comédia', 'Drama', 'Infantil', 'Nacional', 'Clássicos', 'Documentários',
 ];
 
-function shuffleArray<T>(array: T[]): T[] {
-  const shuffled = [...array];
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
-  return shuffled;
-}
 
 // ─── Inline CSS ───────────────────────────────────────────────────────────────
 
@@ -296,7 +288,6 @@ export function HeroCarousel({
         const response = await fetch('/api/events?approved=true');
         if (response.ok) {
           const data = await response.json();
-          // Transformar eventos da API para o formato do carrossel
           const transformedEvents = (data.data || [])
             .filter((event: any) => event.approved && event.image)
             .map((event: any) => ({
@@ -307,10 +298,8 @@ export function HeroCarousel({
               image: event.image,
             }))
             .slice(0, 12); // Limitar a 12 eventos
-          
-          if (transformedEvents.length > 0) {
-            setApiEvents(transformedEvents);
-          }
+
+          setApiEvents(transformedEvents);
         }
       } catch (error) {
         console.error('Erro ao buscar eventos:', error);
@@ -327,28 +316,17 @@ export function HeroCarousel({
 
   useEffect(() => { setMounted(true); }, []);
 
-  const defaultEvents: MovieEvent[] = [
-    { id: '1',  title: "Ainda Estou Aqui",           location: "Fatec Itaquera",              date: "28 jun, 19:00", image: "https://i.imgur.com/X9ieYpi.jpeg" },
-    { id: '2',  title: "Alice no País das Maravilhas",location: "ONG Tela Livre",              date: "05 jul, 15:00", image: "https://i.imgur.com/CH8MwS0.jpeg" },
-    { id: '3',  title: "Até o Último Homem",          location: "CCSP",                        date: "12 jul, 18:00", image: "https://i.imgur.com/OtnVjut.jpeg" },
-    { id: '4',  title: "Bagagem de Risco",            location: "Biblioteca Mário de Andrade", date: "19 jul, 20:00", image: "https://i.imgur.com/3ZmV4kR.jpeg" },
-    { id: '5',  title: "Formula 1",                   location: "Centro Cultural BB",          date: "26 jul, 19:00", image: "https://i.imgur.com/QinomOQ.jpeg" },
-    { id: '6',  title: "Interestelar",                location: "Sesc Pompeia",                date: "02 ago, 19:00", image: "https://i.imgur.com/Et1JYuW.jpeg" },
-    { id: '7',  title: "Marty Supreme",               location: "Cinemateca Brasileira",       date: "09 ago, 18:30", image: "https://i.imgur.com/7hPOcbt.jpeg" },
-    { id: '8',  title: "Os Pecadores",                location: "Museu de Arte de SP",         date: "23 ago, 20:00", image: "https://i.imgur.com/7CKbjYI.jpeg" },
-    { id: '9',  title: "Tropa de Elite",              location: "Centro Cultural SP",          date: "06 set, 18:00", image: "https://i.imgur.com/0lasSWW.jpeg" },
-    { id: '10', title: "Velozes e Furiosos 6",        location: "TeatroMundo",                 date: "13 set, 19:30", image: "https://i.imgur.com/U0luBuP.jpeg" },
-  ];
-
-  // Usar eventos da API se disponível, senão usar padrão
   const events = useMemo(() => {
-    const eventsToUse = apiEvents.length > 0 ? apiEvents : customEvents || defaultEvents;
-    return shuffleArray(eventsToUse);
+    return apiEvents.length > 0 ? apiEvents : customEvents ?? [];
   }, [apiEvents, customEvents]);
-  
-  const activeEvent = useMemo(() => events[activeIndex % events.length], [activeIndex, events]);
 
-  if (!mounted) return <HeroSkeleton />;
+  const activeEvent = useMemo(
+    () => (events.length > 0 ? events[activeIndex % events.length] : null),
+    [activeIndex, events]
+  );
+
+  if (!mounted || isLoadingEvents) return <HeroSkeleton />;
+  if (events.length === 0 || !activeEvent) return null;
 
   return (
     <>

@@ -17,7 +17,9 @@ interface Event {
   description: string;
   date: string;
   location: string;
+  address?: string;
   category: string;
+
   image?: string;
   approved: boolean;
   createdBy: {
@@ -27,7 +29,7 @@ interface Event {
 }
 
 export default function EventsManagement() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
   const [events, setEvents] = useState<Event[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -37,16 +39,26 @@ export default function EventsManagement() {
   const isAdmin = session?.user?.role === "ADMIN";
   const userId = (session?.user as any)?.id;
 
-  // Buscar eventos
+  // Buscar eventos apenas quando a sessão estiver pronta
   useEffect(() => {
-    fetchEvents();
-  }, []);
+    if (status === "authenticated") {
+      fetchEvents();
+    }
+  }, [status]);
 
   const fetchEvents = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch("/api/events");
-      if (!response.ok) throw new Error("Erro ao buscar eventos");
+      const response = await fetch("/api/events", {
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        const message = errorData?.error || `Erro ao buscar eventos (${response.status})`;
+        throw new Error(message);
+      }
+
       const data = await response.json();
       setEvents(data.data || []);
     } catch (error) {
@@ -63,6 +75,7 @@ export default function EventsManagement() {
     try {
       const response = await fetch(`/api/events/${eventId}`, {
         method: "DELETE",
+        credentials: "include",
       });
 
       if (!response.ok) throw new Error("Erro ao deletar evento");
@@ -140,7 +153,7 @@ export default function EventsManagement() {
           {isAdmin ? "Todos os Eventos" : "Seus Eventos"}
         </h2>
 
-        {isLoading ? (
+        {status === "loading" || isLoading ? (
           <Card className="backdrop-blur-xl bg-black/30 border border-amber-500/20 rounded-3xl p-6">
             <p className="text-amber-200/60 text-center py-8">Carregando eventos...</p>
           </Card>

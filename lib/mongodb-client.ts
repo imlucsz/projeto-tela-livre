@@ -3,10 +3,10 @@
 // Usa o MongoDB driver nativo (não Mongoose)
 import { MongoClient } from "mongodb"
 
-const uri = process.env.MONGO_URI!
+const uri = process.env.MONGO_URI || process.env.MONGODB_URI
 
 if (!uri) {
-  throw new Error("Por favor, defina MONGO_URI no .env.local")
+  throw new Error("Por favor, defina MONGO_URI ou MONGODB_URI no .env.local")
 }
 
 let client: MongoClient

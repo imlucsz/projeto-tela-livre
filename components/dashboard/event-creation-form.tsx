@@ -37,10 +37,11 @@ interface Event {
   description: string;
   date: string;
   location: string;
-  address: string;
+  address?: string;
   image?: string;
   category: string;
 }
+
 
 interface EventCreationFormProps {
   initialEvent?: Event | null;
@@ -71,9 +72,10 @@ export default function EventCreationForm({
           description: initialEvent.description,
           date: new Date(initialEvent.date).toISOString().split("T")[0],
           time: new Date(initialEvent.date).toTimeString().split(" ")[0],
-          location: initialEvent.location,
-          address: initialEvent.address,
+location: initialEvent.location,
+          address: initialEvent.address ?? "",
           image: initialEvent.image,
+
           category: (initialEvent.category.toUpperCase() as any) || "CINEMA",
         }
       : {
@@ -108,6 +110,7 @@ export default function EventCreationForm({
 
       const response = await fetch(endpoint, {
         method,
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });

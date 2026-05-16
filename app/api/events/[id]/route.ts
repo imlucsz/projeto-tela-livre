@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Event from '@/lib/models/Event'
+import User from '@/lib/models/User'
 import { connectDB } from '@/lib/mongodb'
 import { auth } from '@/auth'
 import { z } from 'zod'
