@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "seed": "node scripts/seed-carousel-events.js",
+    "seed:ts": "ts-node scripts/seed-carousel-events.ts"
   },
   "dependencies": {
     "@auth/mongodb-adapter": "^3.11.1",
