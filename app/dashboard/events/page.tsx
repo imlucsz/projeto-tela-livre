@@ -1,14 +1,15 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
-import { CinemaDashboard } from "@/components/dashboard/cinema-dashboard";
+import EventsManagement from "@/components/dashboard/events-management";
 
-export default async function DashboardPage() {
+export default async function EventsPage() {
   const session = await auth();
 
+  // Verificar autenticação e permissão
   const userRole = session?.user?.role || "USER";
   if (!session || (userRole !== "ADMIN" && userRole !== "NGO")) {
-    redirect('/');
+    redirect("/");
   }
 
-  return <CinemaDashboard />;
+  return <EventsManagement />;
 }

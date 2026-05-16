@@ -7,6 +7,7 @@ import { ImpactTracker } from "@/components/home/impact-tracker";
 import { FABDiscovery } from "@/components/home/fab-discovery";
 import { CursorFollower } from "@/components/cursor-follower";
 import { SectionReveal } from "@/components/home/section-reveal";
+import { ContactForm } from "@/components/contact-form";
 
 export default function HomePage() {
   return (
@@ -31,6 +32,10 @@ export default function HomePage() {
 
         <SectionReveal delay={0.05}>
           <EventsSection />
+        </SectionReveal>
+
+        <SectionReveal delay={0.05}>
+          <ContactForm />
         </SectionReveal>
       </main>
 

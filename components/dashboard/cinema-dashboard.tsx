@@ -1,12 +1,13 @@
 import Link from "next/link";
-import { signOut } from "next-auth/react";
 import { auth } from "@/auth";
+import SignOutButton from "@/components/dashboard/sign-out-button";
 
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { CreateEventForm } from "@/components/dashboard/create-event-form";
 import {
   Users,
   TrendingUp,
@@ -184,7 +185,7 @@ export async function CinemaDashboard() {
 
   const navItems = [
     { icon: Clapperboard, label: "Painel", active: true, href: "#" },
-    { icon: Film, label: "Filmes", active: false, href: "/dashboard/movies" },
+    { icon: Film, label: "Eventos", active: false, href: "/dashboard/events" },
     { icon: Calendar, label: "Sessões", active: false, href: "/dashboard/sessions" },
     { icon: Users, label: "Beneficiários", active: false, href: "/dashboard/beneficiaries" },
     { icon: Ticket, label: "Ingressos", active: false, href: "/dashboard/tickets" },
@@ -338,14 +339,7 @@ export async function CinemaDashboard() {
                 <HelpCircle className="mr-3 h-5 w-5" />
                 Ajuda
               </Button>
-              <Button
-                variant="ghost"
-                onClick={() => signOut()}
-                className="w-full justify-start text-base text-amber-100/80 hover:bg-red-500/10 hover:text-red-100 transition-all duration-700 ease-out hover:scale-[1.02] h-11"
-              >
-                <LogOut className="mr-3 h-5 w-5" />
-                Sair
-              </Button>
+              <SignOutButton />
             </div>
           </div>
         </Card>
@@ -378,12 +372,7 @@ export async function CinemaDashboard() {
                 >
                   <Bell className="h-5 w-5" />
                 </Button>
-                <Link href="/dashboard/sessions/new">
-                  <Button className="bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/30 hover:border-amber-500/50 text-amber-100 transition-all duration-700 ease-out hover:scale-[1.02]">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Nova Sessão
-                  </Button>
-                </Link>
+                <CreateEventForm />
               </div>
             </div>
           </Card>

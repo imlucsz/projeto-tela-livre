@@ -256,6 +256,21 @@ const styles = `
   }
 `;
 
+// ─── Helper Functions ───────────────────────────────────────────────────────
+
+function formatDate(dateString: string): string {
+  const date = new Date(dateString);
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  
+  const monthNames = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+  const monthName = monthNames[date.getMonth()];
+  
+  return `${day} ${monthName}, ${hours}:${minutes}`;
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 interface HeroCarouselProps {
@@ -269,8 +284,46 @@ export function HeroCarousel({
 }: HeroCarouselProps = {}) {
   const [mounted, setMounted] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [apiEvents, setApiEvents] = useState<MovieEvent[]>([]);
+  const [isLoadingEvents, setIsLoadingEvents] = useState(true);
   const prevRef = useRef<HTMLButtonElement>(null);
   const nextRef = useRef<HTMLButtonElement>(null);
+
+  // Buscar eventos aprovados da API
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        const response = await fetch('/api/events?approved=true');
+        if (response.ok) {
+          const data = await response.json();
+          // Transformar eventos da API para o formato do carrossel
+          const transformedEvents = (data.data || [])
+            .filter((event: any) => event.approved && event.image)
+            .map((event: any) => ({
+              id: event._id,
+              title: event.title,
+              location: event.location || 'A designar',
+              date: formatDate(event.date),
+              image: event.image,
+            }))
+            .slice(0, 12); // Limitar a 12 eventos
+          
+          if (transformedEvents.length > 0) {
+            setApiEvents(transformedEvents);
+          }
+        }
+      } catch (error) {
+        console.error('Erro ao buscar eventos:', error);
+      } finally {
+        setIsLoadingEvents(false);
+      }
+    };
+
+    fetchEvents();
+    // Recarregar a cada 30 segundos para sincronização em tempo real
+    const interval = setInterval(fetchEvents, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -287,7 +340,12 @@ export function HeroCarousel({
     { id: '10', title: "Velozes e Furiosos 6",        location: "TeatroMundo",                 date: "13 set, 19:30", image: "https://i.imgur.com/U0luBuP.jpeg" },
   ];
 
-  const events = useMemo(() => shuffleArray(customEvents || defaultEvents), []);
+  // Usar eventos da API se disponível, senão usar padrão
+  const events = useMemo(() => {
+    const eventsToUse = apiEvents.length > 0 ? apiEvents : customEvents || defaultEvents;
+    return shuffleArray(eventsToUse);
+  }, [apiEvents, customEvents]);
+  
   const activeEvent = useMemo(() => events[activeIndex % events.length], [activeIndex, events]);
 
   if (!mounted) return <HeroSkeleton />;
