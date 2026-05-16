@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { connectDB } from '@/lib/mongodb';
 import Event from '@/lib/models/Event';
+import User from '@/lib/models/User';
 import { auth } from '@/auth';
 
 export const dynamic = 'force-dynamic';
@@ -65,14 +66,16 @@ type CreateEventPayload = z.infer<typeof CreateEventSchema>;
  *   count: number
  * }
  */
-export async function GET(request: NextRequest) {
+export async function GET(req: NextRequest) {
+  // 💡 FORÇA O TURBOPACK A CARREGAR O MODELO DE USUÁRIO PARA O POPULATE NÃO QUEBRAR
+  const _forceUserRegistration = User;
   try {
     // Autenticação opcional para este endpoint
     const session = await auth();
     const userRole = (session?.user as any)?.role || 'USER';
     const userId = (session?.user as any)?.id;
 
-    const searchParams = request.nextUrl.searchParams;
+    const searchParams = req.nextUrl.searchParams;
     const approvedOnly = searchParams.get('approved') === 'true';
 
     await connectDB();
