@@ -45,6 +45,8 @@ export async function POST(req: NextRequest) {
     if (action === 'approve') {
       user.role = 'NGO'
       user.ngoRequested = false
+      // sinalizar para que o usuário receba uma notificação única ao entrar
+      user.showNgoApprovedNotification = true
       await user.save()
       return NextResponse.json({ message: 'Usuário aprovado como ONG' })
     }
