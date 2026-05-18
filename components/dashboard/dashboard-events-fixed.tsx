@@ -1,15 +1,5 @@
 "use client"
 
-interface Event {
-  id: string;
-  title: string;
-  image: string;
-  category: string;
-  date: string;
-  location: string;
-  participants: any[];
-}
-
 import { useState, useEffect } from "react";
 import type { Event } from "./types";
 

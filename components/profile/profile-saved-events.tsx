@@ -14,7 +14,7 @@ export function ProfileSavedEvents() {
     return () => clearTimeout(timer);
   }, []);
 
-  const savedEvents = [];
+  const savedEvents: any[] = [];
 
   if (isLoading) {
     return (
