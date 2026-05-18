@@ -4,12 +4,16 @@ import { connectDB } from '@/lib/mongodb'
 import { ROLES } from '@/lib/constants'
 import { z } from 'zod'
 
+const nameRegex = /^[A-Za-zÀ-ÖØ-öø-ÿ' -]+$/u
+
 const registerSchema = z.object({
-  name: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres').max(50),
+  name: z.string()
+    .min(2, 'Nome deve ter pelo menos 2 caracteres')
+    .max(50)
+    .regex(nameRegex, 'Nome contém caracteres inválidos'),
   email: z.string().email('Email inválido'),
   password: z.string().min(8, 'Senha deve ter pelo menos 8 caracteres'),
-  // 🔐 SEGURANÇA: Apenas USER e NGO são permitidos
-  // ADMIN pode APENAS ser atribuído por um admin no backend
+  // Não confiar no role enviado pelo cliente — sempre gravamos como USER
   role: z.enum([ROLES.USER, ROLES.NGO]).default(ROLES.USER)
 })
 
@@ -31,12 +35,17 @@ export async function POST(request: NextRequest) {
       }, { status: 409 })
     }
     
-    // Criar usuário novo (senha já hashed pelo pre-save)
+    // Segurança: não permitir atribuição direta de ONG pelo cliente.
+    // Se o usuário marcou role === NGO, gravamos como USER e marcamos
+    // ngoRequested=true para revisão manual do admin.
+    const ngoRequested = (body.role === ROLES.NGO) || (validatedData.role === ROLES.NGO)
+
     const newUser = new User({
       name: validatedData.name,
       email: validatedData.email.toLowerCase().trim(),
       password: validatedData.password,
-      role: validatedData.role,
+      role: ROLES.USER,
+      ngoRequested,
       emailVerified: false // Será verificado depois
     })
     
