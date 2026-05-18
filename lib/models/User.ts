@@ -16,7 +16,8 @@ export interface IUser extends Document {
   image?: string;
   savedEvents: mongoose.Types.ObjectId[];
   participatingEvents: mongoose.Types.ObjectId[];
-  isNgo?: boolean; // Campo legado para migração - será removido depois
+  isNgo?: boolean; // Campo legado para migração - será removado depois
+  ngoRequested?: boolean; // Marca se o usuário solicitou ser ONG (aguarda verificação do admin)
   
   comparePassword(candidatePassword: string): Promise<boolean>;
 }
@@ -49,6 +50,10 @@ const UserSchema = new Schema<IUser>({
   isNgo: {
     type: Boolean,
     default: undefined // Campo legado - será deletado
+  },
+  ngoRequested: {
+    type: Boolean,
+    default: false
   },
   emailVerified: {
     type: Boolean,
