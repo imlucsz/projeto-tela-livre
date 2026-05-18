@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import Image from "next/image";
 
-const categoryLabels = {
+const categoryLabels: Record<string, string> = {
   cinema: "Cinema gratuito",
   oficinas: "Oficina",
   projetos: "Projeto social",
@@ -23,7 +23,7 @@ export function ProfileParticipatingEvents() {
     return () => clearTimeout(timer);
   }, []);
 
-  const participatingEvents = [];
+  const participatingEvents: any[] = [];
 
   if (isLoading) {
     return (
