@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useState } from "react";
+import { useEffect } from "react";
 import { SearchImmersive } from "./search-immersive";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
@@ -22,6 +23,28 @@ export function Header() {
   const isLoading = status === 'loading';
 
   const user = session?.user;
+  const [ngoNotice, setNgoNotice] = useState<string | null>(null)
+
+  useEffect(() => {
+    let mounted = true
+    async function checkNotice() {
+      if (!user) return
+      try {
+        const res = await fetch('/api/users/me')
+        if (!res.ok) return
+        const data = await res.json()
+        if (mounted && data?.user?.showNgoApprovedNotification) {
+          setNgoNotice('Parabéns! Sua conta foi aprovada como ONG. Seu painel de ONG está disponível.')
+          // marcar como vista
+          await fetch('/api/users/mark-ngo-notified', { method: 'POST' })
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+    checkNotice()
+    return () => { mounted = false }
+  }, [user])
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -207,6 +230,14 @@ export function Header() {
               </div>
             )}
           </nav>
+        </div>
+      )}
+      {ngoNotice && (
+        <div className="bg-emerald-500 text-white text-sm px-4 py-2 text-center">
+          <div className="max-w-7xl mx-auto flex items-center justify-between">
+            <div>{ngoNotice}</div>
+            <button className="ml-4 underline" onClick={() => setNgoNotice(null)}>Fechar</button>
+          </div>
         </div>
       )}
     </header>
