@@ -10,7 +10,7 @@ import Event from "@/lib/models/Event";
 export const dynamic = 'force-dynamic';
 
 interface EventPageProps {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 function mapDbEventToUiEvent(event: any) {
@@ -49,9 +49,10 @@ function mapDbEventToUiEvent(event: any) {
 }
 
 export default async function EventPage({ params }: EventPageProps) {
+  const resolvedParams = await params;
   await connectDB();
 
-  const event = await Event.findById(params.id)
+  const event = await Event.findById(resolvedParams.id)
     .populate('createdBy', 'name image')
     .lean();
 
