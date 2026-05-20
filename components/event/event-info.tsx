@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Calendar, Clock, MapPin, Users, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,17 +12,23 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
+import { toast } from "sonner";
 
 export function EventInfo({ event }: { event: any }) {
+  const eventId = useMemo(() => event?.id ?? event?._id, [event]);
+
   const [isParticipating, setIsParticipating] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+
   const [isLoadingStatus, setIsLoadingStatus] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [actionLoading, setActionLoading] = useState(false);
+
+  const [participationLoading, setParticipationLoading] = useState(false);
+  const [cancelLoading, setCancelLoading] = useState(false);
   const [saveLoading, setSaveLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const [inlineError, setInlineError] = useState<string | null>(null);
 
   const formattedDate = new Date(event.date).toLocaleDateString("pt-BR", {
     weekday: "long",
@@ -36,94 +42,163 @@ export function EventInfo({ event }: { event: any }) {
 
     async function loadUserStatus() {
       setIsLoadingStatus(true);
-      setErrorMessage(null);
+      setInlineError(null);
 
       try {
-        const response = await fetch("/api/users/me");
-        if (!response.ok) {
-          return;
-        }
+        const response = await fetch("/api/users/me", {
+          credentials: "include",
+        });
+
+        // Se não estiver logado, o endpoint deve retornar 401.
+        if (!response.ok) return;
 
         const data = await response.json();
         if (!mounted || !data?.user) return;
 
-        const savedEvents = Array.isArray(data.user.savedEvents) ? data.user.savedEvents : [];
+        const savedEvents = Array.isArray(data.user.savedEvents)
+          ? data.user.savedEvents
+          : [];
         const participatingEvents = Array.isArray(data.user.participatingEvents)
           ? data.user.participatingEvents
           : [];
 
         const saved = savedEvents.some(
-          (item: any) => item?._id?.toString() === event.id || item?.id === event.id
+          (item: any) => item?._id?.toString() === eventId?.toString() || item?.id === eventId
         );
         const participating = participatingEvents.some(
-          (item: any) => item?._id?.toString() === event.id || item?.id === event.id
+          (item: any) =>
+            item?._id?.toString() === eventId?.toString() || item?.id === eventId
         );
 
         setIsSaved(saved);
         setIsParticipating(participating);
-      } catch (error) {
-        // ignore: usuário possivelmente não está logado
+      } catch {
+        // ignora
       } finally {
         if (mounted) setIsLoadingStatus(false);
       }
     }
 
-    loadUserStatus();
+    if (eventId) loadUserStatus();
 
     return () => {
       mounted = false;
     };
-  }, [event.id]);
+  }, [eventId]);
 
   const handleConfirmParticipation = async () => {
-    setActionLoading(true);
-    setErrorMessage(null);
+    if (!eventId) return;
+
+    setParticipationLoading(true);
+    setInlineError(null);
 
     try {
-      const response = await fetch(`/api/events/${event.id}/participate`, {
+      const response = await fetch(`/api/events/${eventId}/participate`, {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
       });
 
-      const body = await response.json();
+      const body = await response.json().catch(() => ({}));
+
       if (!response.ok) {
-        setErrorMessage(body?.error || "Não foi possível confirmar a participação.");
+        setInlineError(body?.error || "Não foi possível confirmar a participação.");
         return;
       }
 
       setIsParticipating(true);
       setIsDialogOpen(false);
-    } catch (error) {
-      setErrorMessage("Erro ao confirmar participação. Tente novamente.");
+      toast.success("Participação confirmada!");
+    } catch {
+      setInlineError("Erro ao confirmar participação. Tente novamente.");
     } finally {
-      setActionLoading(false);
+      setParticipationLoading(false);
+    }
+  };
+
+  const handleToggleParticipation = async () => {
+    if (!eventId) return;
+
+    setInlineError(null);
+
+    if (!isParticipating) {
+      // abre modal de responsabilidade
+      setIsDialogOpen(true);
+      return;
+    }
+
+    // cancelamento
+    setCancelLoading(true);
+    try {
+      const response = await fetch(`/api/events/${eventId}/participate`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+
+      const body = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        if (response.status === 403) {
+          const message =
+            body?.error ||
+            "Prazo de cancelamento expirou. Cancelamentos só são permitidos com 3 dias de antecedência.";
+          toast.error(message);
+          setInlineError(message);
+          return;
+        }
+
+        const message = body?.error || "Erro ao cancelar participação.";
+        toast.error(message);
+        setInlineError(message);
+        return;
+      }
+
+      setIsParticipating(false);
+      toast.success("Participação cancelada com sucesso.");
+    } catch {
+      const message = "Erro ao cancelar participação. Tente novamente.";
+      toast.error(message);
+      setInlineError(message);
+    } finally {
+      setCancelLoading(false);
     }
   };
 
   const handleToggleSave = async () => {
-    if (saveLoading) return;
+    if (!eventId || saveLoading) return;
+
     setSaveLoading(true);
-    setErrorMessage(null);
+    setInlineError(null);
 
     try {
-      const response = await fetch(`/api/events/${event.id}/save`, {
+      const response = await fetch(`/api/events/${eventId}/save`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        credentials: "include",
       });
 
-      const body = await response.json();
+      const body = await response.json().catch(() => ({}));
+
       if (!response.ok) {
-        setErrorMessage(body?.error || "Não foi possível salvar o evento.");
+        const message = body?.error || "Não foi possível salvar o evento.";
+        toast.error(message);
+        setInlineError(message);
         return;
       }
 
-      setIsSaved(!isSaved);
-    } catch (error) {
-      setErrorMessage("Erro ao salvar evento. Tente novamente.");
+      // A rota alterna no backend; no frontend, invertimos o estado.
+      setIsSaved((prev) => !prev);
+      toast.success(body?.message || (isSaved ? "Removido" : "Salvo"));
+    } catch {
+      const message = "Erro ao salvar evento. Tente novamente.";
+      toast.error(message);
+      setInlineError(message);
     } finally {
       setSaveLoading(false);
     }
   };
+
+  const cancelDisabled = !isParticipating || cancelLoading || isLoadingStatus;
+  const participateDisabled = isLoadingStatus || participationLoading;
 
   return (
     <div className="space-y-8">
@@ -172,60 +247,65 @@ export function EventInfo({ event }: { event: any }) {
           </div>
 
           <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogTrigger asChild>
-                <Button
-                  size="lg"
-                  className="flex-1 gap-2"
-                  variant={isParticipating ? "secondary" : "default"}
-                  disabled={isParticipating || isLoadingStatus}
-                >
-                  <Users className="h-4 w-4" />
-                  {isParticipating ? "Participando" : "Participar"}
-                </Button>
-              </DialogTrigger>
-
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Termo de participação</DialogTitle>
-                  <DialogDescription>
-                    Ao confirmar, você se compromete a comparecer. Cancelamentos devem ser feitos com 3 dias de antecedência. O não comparecimento resultará em banimento da plataforma.
-                  </DialogDescription>
-                </DialogHeader>
-                {errorMessage ? (
-                  <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                    {errorMessage}
-                  </p>
-                ) : null}
-                <DialogFooter>
-                  <Button
-                    variant="secondary"
-                    onClick={() => setIsDialogOpen(false)}
-                    disabled={actionLoading}
-                  >
-                    Cancelar
-                  </Button>
-                  <Button
-                    onClick={handleConfirmParticipation}
-                    disabled={actionLoading}
-                  >
-                    {actionLoading ? "Confirmando..." : "Eu concordo"}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+            <Button
+              size="lg"
+              className="flex-1 gap-2"
+              variant={isParticipating ? "secondary" : "default"}
+              onClick={handleToggleParticipation}
+              disabled={isLoadingStatus || participationLoading || cancelLoading}
+            >
+              <Users className="h-4 w-4" />
+              {cancelLoading ? "Cancelando..." : isParticipating ? "Participando" : "Participar"}
+            </Button>
 
             <Button
               size="lg"
               variant={isSaved ? "secondary" : "outline"}
               className="flex-1 gap-2"
               onClick={handleToggleSave}
-              disabled={saveLoading}
+              disabled={saveLoading || isLoadingStatus}
             >
               <Heart className={`h-4 w-4 ${isSaved ? "fill-primary text-primary" : ""}`} />
-              {isSaved ? "Salvo" : "Salvar evento"}
+              {saveLoading ? "Salvando..." : isSaved ? "Salvo" : "Salvar evento"}
             </Button>
           </div>
+
+          {inlineError ? (
+            <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {inlineError}
+            </div>
+          ) : null}
+
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Atenção</DialogTitle>
+                <DialogDescription>
+                  Ao confirmar, você se compromete a comparecer. Cancelamentos só são permitidos com 3 dias de antecedência.
+                  Faltar sem aviso prévio resultará no seu banimento permanente da plataforma.
+                </DialogDescription>
+              </DialogHeader>
+
+              {inlineError ? (
+                <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                  {inlineError}
+                </p>
+              ) : null}
+
+              <DialogFooter>
+                <Button
+                  variant="secondary"
+                  onClick={() => setIsDialogOpen(false)}
+                  disabled={participationLoading}
+                >
+                  Cancelar
+                </Button>
+                <Button onClick={handleConfirmParticipation} disabled={participateDisabled}>
+                  {participationLoading ? "Confirmando..." : "Confirmar"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </CardContent>
       </Card>
 
@@ -261,3 +341,4 @@ export function EventInfo({ event }: { event: any }) {
     </div>
   );
 }
+
