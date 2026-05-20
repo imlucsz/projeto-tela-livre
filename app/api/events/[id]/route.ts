@@ -29,6 +29,7 @@ export async function GET(
     const event = await Event.findById(resolvedParams.id)
       .populate('createdBy', 'name image')
       .populate('participants', 'name email')
+      .populate('attended', 'name email')
       .lean()
 
     

@@ -17,13 +17,45 @@ const categoryLabels: Record<string, string> = {
 
 export function ProfileParticipatingEvents() {
   const [isLoading, setIsLoading] = useState(true);
+  const [participatingEvents, setParticipatingEvents] = useState<any[]>([]);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 800);
-    return () => clearTimeout(timer);
-  }, []);
+    let mounted = true;
 
-  const participatingEvents: any[] = [];
+    async function loadParticipatingEvents() {
+      setIsLoading(true);
+      setErrorMessage(null);
+
+      try {
+        const response = await fetch("/api/users/me");
+        if (!response.ok) {
+          const body = await response.json().catch(() => ({}));
+          throw new Error(body?.error || "Não foi possível carregar seus eventos.");
+        }
+
+        const data = await response.json();
+        if (!mounted) return;
+
+        const events = Array.isArray(data?.user?.participatingEvents)
+          ? data.user.participatingEvents
+          : [];
+
+        setParticipatingEvents(events);
+      } catch (error) {
+        if (!mounted) return;
+        setErrorMessage((error as Error).message);
+      } finally {
+        if (mounted) setIsLoading(false);
+      }
+    }
+
+    loadParticipatingEvents();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   if (isLoading) {
     return (
@@ -44,6 +76,19 @@ export function ProfileParticipatingEvents() {
               </div>
             ))}
           </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (errorMessage) {
+    return (
+      <Card className="border-border bg-card">
+        <CardContent className="space-y-4 py-8 text-center">
+          <p className="text-sm text-red-600">{errorMessage}</p>
+          <Button asChild>
+            <Link href="/">Voltar para eventos</Link>
+          </Button>
         </CardContent>
       </Card>
     );
@@ -86,13 +131,13 @@ export function ProfileParticipatingEvents() {
 
             return (
               <div
-                key={event.id}
+                key={event._id?.toString() || event.id}
                 className="flex flex-col gap-4 rounded-lg border border-border bg-gradient-to-r from-primary/5 to-transparent p-4 sm:flex-row"
               >
                 <div className="relative h-32 w-full shrink-0 overflow-hidden rounded-lg sm:h-28 sm:w-36">
                   <Image
-                    src={event.image}
-                    alt={event.title}
+                    src={event.image || "/placeholder.jpg"}
+                    alt={event.title || "Evento"}
                     fill
                     className="object-cover"
                   />
@@ -108,7 +153,7 @@ export function ProfileParticipatingEvents() {
                         {event.title}
                       </h3>
                       <Badge variant="secondary" className="shrink-0">
-                        {categoryLabels[event.category]}
+                        {categoryLabels[event.category] || "Evento"}
                       </Badge>
                     </div>
 
@@ -133,7 +178,7 @@ export function ProfileParticipatingEvents() {
                       Confirmado
                     </Badge>
                     <Button variant="outline" size="sm" asChild>
-                      <Link href={`/event/${event.id}`}>
+                      <Link href={`/event/${event._id?.toString() || event.id}`}>
                         Ver detalhes
                         <ExternalLink className="ml-1.5 h-3.5 w-3.5" />
                       </Link>

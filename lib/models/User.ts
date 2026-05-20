@@ -16,6 +16,7 @@ export interface IUser extends Document {
   image?: string;
   savedEvents: mongoose.Types.ObjectId[];
   participatingEvents: mongoose.Types.ObjectId[];
+  isBanned?: boolean;
   isNgo?: boolean; // Campo legado para migração - será removado depois
   ngoRequested?: boolean; // Marca se o usuário solicitou ser ONG (aguarda verificação do admin)
   showNgoApprovedNotification?: boolean; // Notificação única a ser exibida ao usuário
@@ -77,7 +78,12 @@ const UserSchema = new Schema<IUser>({
     type: Schema.Types.ObjectId,
     ref: 'Event',
     default: []
-  }]
+  }],
+  isBanned: {
+    type: Boolean,
+    default: false,
+    index: true
+  }
 }, {
   timestamps: true
 });
