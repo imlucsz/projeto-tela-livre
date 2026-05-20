@@ -28,7 +28,9 @@ export function ProfileParticipatingEvents() {
       setErrorMessage(null);
 
       try {
-        const response = await fetch("/api/users/me");
+        const response = await fetch("/api/users/me", {
+          credentials: "include",
+        });
         if (!response.ok) {
           const body = await response.json().catch(() => ({}));
           throw new Error(body?.error || "Não foi possível carregar seus eventos.");
