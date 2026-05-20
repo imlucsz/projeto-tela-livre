@@ -231,6 +231,7 @@ export function EventInfo({ event }: { event: any }) {
               <Users className="h-4 w-4" />
               <span>{event.participants?.length ?? 0} participantes</span>
             </div>
+
           </div>
 
           <Separator className="my-6" />

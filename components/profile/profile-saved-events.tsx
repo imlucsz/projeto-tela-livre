@@ -8,13 +8,49 @@ import { EventCard, EventCardSkeleton } from "@/components/event-card";
 
 export function ProfileSavedEvents() {
   const [isLoading, setIsLoading] = useState(true);
+  const [savedEvents, setSavedEvents] = useState<any[]>([]);
+
 
   useEffect(() => {
     const timer = setTimeout(() => setIsLoading(false), 800);
     return () => clearTimeout(timer);
   }, []);
 
-  const savedEvents: any[] = [];
+
+
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadSavedEvents() {
+      try {
+        const response = await fetch("/api/users/me", {
+          credentials: "include",
+        });
+        if (!response.ok) return;
+
+        const data = await response.json();
+        if (!mounted) return;
+
+        const events = Array.isArray(data?.user?.savedEvents)
+          ? data.user.savedEvents
+          : [];
+        setSavedEvents(events);
+      } catch {
+        // ignore
+      }
+    }
+
+    loadSavedEvents();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+
+
+
 
   if (isLoading) {
     return (
@@ -58,8 +94,9 @@ export function ProfileSavedEvents() {
       <CardContent>
         <div className="grid gap-6 sm:grid-cols-2">
           {savedEvents.map((event) => (
-            <EventCard key={event.id} event={event} />
+            <EventCard key={event._id?.toString?.() || event.id} event={event} />
           ))}
+
         </div>
       </CardContent>
     </Card>
