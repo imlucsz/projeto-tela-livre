@@ -29,6 +29,7 @@ export function EventInfo({ event }: { event: any }) {
   const [saveLoading, setSaveLoading] = useState(false);
 
   const [inlineError, setInlineError] = useState<string | null>(null);
+  const [participantCount, setParticipantCount] = useState(event.participants?.length ?? 0);
 
   const formattedDate = new Date(event.date).toLocaleDateString("pt-BR", {
     weekday: "long",
@@ -107,6 +108,7 @@ export function EventInfo({ event }: { event: any }) {
       }
 
       setIsParticipating(true);
+      setParticipantCount((prev) => prev + 1);
       setIsDialogOpen(false);
       toast.success("Participação confirmada!");
     } catch {
@@ -154,6 +156,7 @@ export function EventInfo({ event }: { event: any }) {
       }
 
       setIsParticipating(false);
+      setParticipantCount((prev) => Math.max(0, prev - 1));
       toast.success("Participação cancelada com sucesso.");
     } catch {
       const message = "Erro ao cancelar participação. Tente novamente.";
@@ -229,7 +232,7 @@ export function EventInfo({ event }: { event: any }) {
 
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Users className="h-4 w-4" />
-              <span>{event.participants?.length ?? 0} participantes</span>
+              <span>{participantCount} participantes</span>
             </div>
 
           </div>

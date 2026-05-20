@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import Image from "next/image";
 import { useSession } from "next-auth/react";
+import { useState, useEffect } from "react";
 
 interface ProfileSidebarProps {
   activeTab: "saved" | "participating";
@@ -15,16 +16,42 @@ interface ProfileSidebarProps {
 export function ProfileSidebar({ activeTab, setActiveTab }: ProfileSidebarProps) {
   const { data: session } = useSession()
   const user = session?.user as any
+  const [savedCount, setSavedCount] = useState(0)
+  const [participatingCount, setParticipatingCount] = useState(0)
 
-  const savedCount = Array.isArray(user?.savedEvents)
-    ? user.savedEvents.length
-    : 0
+  useEffect(() => {
+    let mounted = true
 
-  const participatingCount = Array.isArray(user?.participatingEvents)
-    ? user.participatingEvents.length
-    : 0
+    async function loadCounts() {
+      try {
+        const response = await fetch("/api/users/me", {
+          credentials: "include",
+        })
+        if (!response.ok) return
 
+        const data = await response.json()
+        if (!mounted) return
 
+        const savedEvents = Array.isArray(data?.user?.savedEvents)
+          ? data.user.savedEvents
+          : []
+        const participatingEvents = Array.isArray(data?.user?.participatingEvents)
+          ? data.user.participatingEvents
+          : []
+
+        setSavedCount(savedEvents.length)
+        setParticipatingCount(participatingEvents.length)
+      } catch {
+        // ignore
+      }
+    }
+
+    loadCounts()
+
+    return () => {
+      mounted = false
+    }
+  }, [])
 
   const menuItems = [
     { id: "participating" as const, label: "Participando", icon: Calendar, count: participatingCount },
