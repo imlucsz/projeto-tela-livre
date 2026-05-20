@@ -14,9 +14,17 @@ interface ProfileSidebarProps {
 
 export function ProfileSidebar({ activeTab, setActiveTab }: ProfileSidebarProps) {
   const { data: session } = useSession()
-  const user = session?.user
-  const savedCount = 0
-  const participatingCount = 0
+  const user = session?.user as any
+
+  const savedCount = Array.isArray(user?.savedEvents)
+    ? user.savedEvents.length
+    : 0
+
+  const participatingCount = Array.isArray(user?.participatingEvents)
+    ? user.participatingEvents.length
+    : 0
+
+
 
   const menuItems = [
     { id: "participating" as const, label: "Participando", icon: Calendar, count: participatingCount },
