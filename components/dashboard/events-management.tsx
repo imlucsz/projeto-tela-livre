@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -229,8 +230,8 @@ export default function EventsManagement() {
                     </div>
 
                     {/* Actions */}
-                    <div className="flex gap-2 justify-end">
-                      {isAdmin || event.createdBy.name === session?.user?.name ? (
+                    <div className="flex flex-wrap gap-2 justify-end">
+                      {isAdmin || event.createdBy.email === session?.user?.email ? (
                         <>
                           <Button
                             size="sm"
@@ -243,6 +244,17 @@ export default function EventsManagement() {
                           >
                             <Edit2 className="h-4 w-4 mr-2" />
                             Editar
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="text-sky-400 hover:bg-sky-500/20"
+                            asChild
+                          >
+                            <Link href={`/dashboard/events/${event._id}/attendance`}>
+                              <Users className="h-4 w-4 mr-2" />
+                              Presenças
+                            </Link>
                           </Button>
                           <Button
                             size="sm"

@@ -24,6 +24,8 @@ export interface IEvent extends Document {
   approved: boolean;
   featured: boolean;
   participants: mongoose.Types.ObjectId[];
+  attended: mongoose.Types.ObjectId[];
+  isClosed: boolean;
   volunteers: mongoose.Types.ObjectId[];
   impact: ImpactData;
   createdAt: Date;
@@ -128,6 +130,18 @@ const EventSchema = new Schema<IEvent>(
         default: []
       }
     ],
+    attended: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: 'User',
+        default: []
+      }
+    ],
+    isClosed: {
+      type: Boolean,
+      default: false,
+      index: true
+    },
     volunteers: [
       {
         type: Schema.Types.ObjectId,

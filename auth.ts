@@ -35,6 +35,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             return null
           }
 
+          if (user.isBanned) {
+            return null
+          }
+
           const isPasswordValid = await user.comparePassword(credentials.password as string)
           if (!isPasswordValid) {
             return null
