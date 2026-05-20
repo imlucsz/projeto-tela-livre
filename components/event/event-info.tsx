@@ -108,7 +108,7 @@ export function EventInfo({ event }: { event: any }) {
       }
 
       setIsParticipating(true);
-      setParticipantCount((prev) => prev + 1);
+      setParticipantCount((prev: number) => prev + 1);
       setIsDialogOpen(false);
       toast.success("Participação confirmada!");
     } catch {
@@ -156,7 +156,7 @@ export function EventInfo({ event }: { event: any }) {
       }
 
       setIsParticipating(false);
-      setParticipantCount((prev) => Math.max(0, prev - 1));
+      setParticipantCount((prev: number) => Math.max(0, prev - 1));
       toast.success("Participação cancelada com sucesso.");
     } catch {
       const message = "Erro ao cancelar participação. Tente novamente.";
