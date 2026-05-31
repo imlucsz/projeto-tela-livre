@@ -6,6 +6,18 @@ export enum EventCategory {
   PROJETOS = 'projetos'
 }
 
+export enum EventGenre {
+  GERAL = 'geral',
+  COMEDIA = 'comedia',
+  DRAMA = 'drama',
+  INFANTIL = 'infantil',
+  ANIMACAO = 'animacao',
+  DOCUMENTARIO = 'documentario',
+  ACAO = 'acao',
+  ROMANCE = 'romance',
+  FICCAO = 'ficcao'
+}
+
 export interface ImpactData {
   people: number;
   communities: number;
@@ -20,6 +32,7 @@ export interface IEvent extends Document {
   address: string;
   image?: string;
   category: EventCategory | string;
+  genre?: EventGenre | string;
   createdBy: mongoose.Types.ObjectId;
   approved: boolean;
   featured: boolean;
@@ -99,6 +112,16 @@ const EventSchema = new Schema<IEvent>(
       },
       required: [true, 'Categoria é obrigatória'],
       default: EventCategory.CINEMA
+    },
+    genre: {
+      type: String,
+      enum: {
+        values: Object.values(EventGenre),
+        message: 'Gênero inválido'
+      },
+      required: false,
+      default: EventGenre.GERAL,
+      index: true
     },
     createdBy: {
       type: Schema.Types.ObjectId,

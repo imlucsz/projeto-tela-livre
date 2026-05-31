@@ -125,15 +125,22 @@ export function ProfileParticipatingEvents() {
       <CardContent>
         <div className="space-y-4">
           {participatingEvents.map((event) => {
-            const formattedDate = new Date(event.date).toLocaleDateString("pt-BR", {
-              weekday: "short",
-              day: "numeric",
-              month: "short",
+            const eventDate = event.date ? new Date(event.date) : new Date();
+            const formattedDate = eventDate.toLocaleDateString('pt-BR', {
+              weekday: 'short',
+              day: 'numeric',
+              month: 'short',
             });
+            const eventTime = event.time || eventDate.toLocaleTimeString('pt-BR', {
+              hour: '2-digit',
+              minute: '2-digit',
+            });
+            const eventCategory = event.category || 'cinema';
+            const eventId = event._id?.toString?.() || event.id || '';
 
             return (
               <div
-                key={event._id?.toString() || event.id}
+                key={eventId}
                 className="flex flex-col gap-4 rounded-lg border border-border bg-gradient-to-r from-primary/5 to-transparent p-4 sm:flex-row"
               >
                 <div className="relative h-32 w-full shrink-0 overflow-hidden rounded-lg sm:h-28 sm:w-36">
@@ -155,7 +162,7 @@ export function ProfileParticipatingEvents() {
                         {event.title}
                       </h3>
                       <Badge variant="secondary" className="shrink-0">
-                        {categoryLabels[event.category] || "Evento"}
+                        {categoryLabels[eventCategory] || 'Evento'}
                       </Badge>
                     </div>
 
@@ -166,7 +173,7 @@ export function ProfileParticipatingEvents() {
                       </span>
                       <span className="flex items-center gap-1">
                         <Clock className="h-3.5 w-3.5" />
-                        {event.time}
+                        {eventTime}
                       </span>
                       <span className="flex items-center gap-1">
                         <MapPin className="h-3.5 w-3.5" />
@@ -180,7 +187,7 @@ export function ProfileParticipatingEvents() {
                       Confirmado
                     </Badge>
                     <Button variant="outline" size="sm" asChild>
-                      <Link href={`/event/${event._id?.toString() || event.id}`}>
+                      <Link href={`/event/${eventId}`}>
                         Ver detalhes
                         <ExternalLink className="ml-1.5 h-3.5 w-3.5" />
                       </Link>

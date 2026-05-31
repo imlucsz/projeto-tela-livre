@@ -4,7 +4,6 @@ import React, { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, X, TrendingUp, MapPin, Calendar, Music, Theater, Trophy, Film, Users, BookOpen } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { mockEvents } from "@/lib/mock-data";
 
 // Categorias baseadas nos dados
 const CATEGORIES = [
@@ -24,6 +23,7 @@ export function SearchImmersive({ isOpen: externalIsOpen, onOpenChange }: Search
   const setIsOpen = onOpenChange || setInternalIsOpen;
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [events, setEvents] = useState<any[]>([]);
   const router = useRouter();
 
   // Debouncing para performance
@@ -52,13 +52,33 @@ export function SearchImmersive({ isOpen: externalIsOpen, onOpenChange }: Search
 
   // Filtrar eventos baseado na query
   const filteredEvents = useMemo(() => {
-    if (!debouncedQuery) return mockEvents.slice(0, 4); // Mostra primeiros 4 se sem query
-    return mockEvents.filter(event =>
+    if (!debouncedQuery) return events.slice(0, 4); // Mostra primeiros 4 se sem query
+    return events.filter(event =>
       event.title.toLowerCase().includes(debouncedQuery.toLowerCase()) ||
-      event.category.toLowerCase().includes(debouncedQuery.toLowerCase()) ||
-      event.location.toLowerCase().includes(debouncedQuery.toLowerCase())
+      (event.category || '').toLowerCase().includes(debouncedQuery.toLowerCase()) ||
+      (event.location || '').toLowerCase().includes(debouncedQuery.toLowerCase()) ||
+      ((event.genre || '') as string).toLowerCase().includes(debouncedQuery.toLowerCase())
     ).slice(0, 8); // Limita a 8 resultados
   }, [debouncedQuery]);
+
+  // Carrega eventos aprovados uma vez (para busca local)
+  useEffect(() => {
+    let mounted = true;
+    async function load() {
+      try {
+        const res = await fetch('/api/events?approved=true');
+        const json = await res.json();
+        if (mounted && json?.success) {
+          const normalized = (json.data || []).map((e: any) => ({ ...e, id: e._id || e.id }));
+          setEvents(normalized);
+        }
+      } catch (e) {
+        console.error('Erro ao carregar eventos para busca:', e);
+      }
+    }
+    load();
+    return () => { mounted = false };
+  }, []);
 
   const handleEventClick = (eventId: string) => {
     setIsOpen(false);

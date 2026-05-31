@@ -39,6 +39,11 @@ const CreateEventSchema = z.object({
     .url('URL da imagem deve ser válida')
     .optional()
     .default(''),
+  genre: z
+    .enum(['geral','comedia','drama','infantil','animacao','documentario','acao','romance','ficcao'], {
+      errorMap: () => ({ message: 'Gênero inválido' })
+    })
+    .default('geral'),
   category: z
     .enum(['cinema', 'oficinas', 'projetos'], {
       errorMap: () => ({ message: 'Categoria deve ser: cinema, oficinas ou projetos' })

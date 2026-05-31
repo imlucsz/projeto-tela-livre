@@ -13,11 +13,13 @@ export async function GET() {
       .select('-password')
       .populate({
         path: 'participatingEvents',
-        select: 'title description date location address image category'
+        select: 'title description date location address image category createdBy',
+        populate: { path: 'createdBy', select: 'name image' }
       })
       .populate({
         path: 'savedEvents',
-        select: 'title description date location address image category'
+        select: 'title description date location address image category createdBy',
+        populate: { path: 'createdBy', select: 'name image' }
       })
 
     if (!user) return NextResponse.json({ error: 'Not found' }, { status: 404 })
