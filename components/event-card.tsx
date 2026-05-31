@@ -23,18 +23,34 @@ const categoryColors = {
 
 export function EventCard({ event }: { event: Event }) {
   const [saved, setSaved] = useState(false);
+  const eventDate = event.date ? new Date(event.date) : new Date();
+  const eventId = event._id?.toString?.() || event.id || '';
+  const eventImage = event.image || '/placeholder.jpg';
+  const eventTitle = event.title || 'Evento';
+  const eventLocation = event.location || event.address || 'Local não informado';
+  const eventCategory = event.category || 'cinema';
+  const eventTime = event.time || eventDate.toLocaleTimeString('pt-BR', {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+  const ngo = event.ngo || {
+    name: 'Organizador',
+    logo: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(
+      event.title || 'Organizador'
+    )}`,
+  };
 
-  const formattedDate = new Date(event.date).toLocaleDateString("pt-BR", {
-    day: "numeric",
-    month: "short",
+  const formattedDate = eventDate.toLocaleDateString('pt-BR', {
+    day: 'numeric',
+    month: 'short',
   });
 
   return (
     <Card className="group overflow-hidden border-border bg-card transition-all duration-300 hover:shadow-lg hover:shadow-primary/5">
       <div className="relative aspect-[16/10] overflow-hidden">
         <Image
-          src={event.image}
-          alt={event.title}
+          src={eventImage}
+          alt={eventTitle}
           fill
           className="object-cover transition-transform duration-300 group-hover:scale-105"
         />
@@ -47,31 +63,31 @@ export function EventCard({ event }: { event: Event }) {
           className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-background/80 backdrop-blur-sm transition-colors hover:bg-background"
         >
           <Bookmark
-            className={`h-4 w-4 ${saved ? "fill-primary text-primary" : "text-muted-foreground"}`}
+            className={`h-4 w-4 ${saved ? 'fill-primary text-primary' : 'text-muted-foreground'}`}
           />
         </button>
         <Badge
           variant="secondary"
-          className={`absolute left-3 top-3 border-0 ${categoryColors[event.category]}`}
+          className={`absolute left-3 top-3 border-0 ${categoryColors[eventCategory] || 'bg-primary/10 text-primary hover:bg-primary/20'}`}
         >
-          {categoryLabels[event.category]}
+          {categoryLabels[eventCategory] || 'Evento'}
         </Badge>
       </div>
 
       <CardContent className="p-4">
         <h3 className="line-clamp-2 text-lg font-semibold leading-snug text-foreground group-hover:text-primary transition-colors">
-          {event.title}
+          {eventTitle}
         </h3>
 
         <div className="mt-3 flex flex-col gap-2">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <MapPin className="h-4 w-4 shrink-0" />
-            <span className="truncate">{event.location}</span>
+            <span className="truncate">{eventLocation}</span>
           </div>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Calendar className="h-4 w-4 shrink-0" />
             <span>
-              {formattedDate} às {event.time}
+              {formattedDate} às {eventTime}
             </span>
           </div>
         </div>
@@ -79,18 +95,18 @@ export function EventCard({ event }: { event: Event }) {
         <div className="mt-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Image
-              src={event.ngo.logo}
-              alt={event.ngo.name}
+              src={ngo.logo}
+              alt={ngo.name}
               width={24}
               height={24}
               className="rounded-full"
             />
             <span className="text-xs text-muted-foreground truncate max-w-[120px]">
-              {event.ngo.name}
+              {ngo.name}
             </span>
           </div>
           <Button size="sm" asChild>
-            <Link href={`/event/${event.id}`}>Participar</Link>
+            <Link href={`/event/${eventId}`}>Participar</Link>
           </Button>
         </div>
       </CardContent>

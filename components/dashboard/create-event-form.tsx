@@ -57,9 +57,12 @@ const createEventSchema = z.object({
     .max(100, 'Localização deve ter no máximo 100 caracteres')
     .optional()
     .default(''),
+  genre: z
+    .enum(['geral','comedia','drama','infantil','animacao','documentario','acao','romance','ficcao'])
+    .default('geral'),
   category: z
-    .enum(['CINEMA', 'OFICINAS', 'PROJETOS'])
-    .default('CINEMA'),
+    .enum(['cinema', 'oficinas', 'projetos'])
+    .default('cinema'),
 })
 
 type CreateEventFormData = z.infer<typeof createEventSchema>
@@ -84,11 +87,13 @@ export function CreateEventForm() {
       date: '',
       image: '',
       location: '',
-      category: 'CINEMA',
+      category: 'cinema',
+      genre: 'geral',
     },
   })
 
   const category = watch('category')
+  const genre = watch('genre')
 
   const onSubmit = async (data: CreateEventFormData) => {
     setIsLoading(true)
@@ -149,13 +154,37 @@ export function CreateEventForm() {
                 <SelectValue placeholder="Selecione uma categoria" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="CINEMA">Cinema</SelectItem>
-                <SelectItem value="OFICINAS">Oficinas</SelectItem>
-                <SelectItem value="PROJETOS">Projetos</SelectItem>
+                <SelectItem value="cinema">Cinema</SelectItem>
+                <SelectItem value="oficinas">Oficinas</SelectItem>
+                <SelectItem value="projetos">Projetos</SelectItem>
               </SelectContent>
             </Select>
             {errors.category && (
               <p className="text-sm text-red-500">{errors.category.message}</p>
+            )}
+          </div>
+
+          {/* Gênero */}
+          <div className="space-y-2">
+            <Label htmlFor="genre">Gênero</Label>
+            <Select value={genre} onValueChange={(value) => setValue('genre', value as any)}>
+              <SelectTrigger id="genre">
+                <SelectValue placeholder="Selecione um gênero" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="geral">Geral</SelectItem>
+                <SelectItem value="comedia">Comédia</SelectItem>
+                <SelectItem value="drama">Drama</SelectItem>
+                <SelectItem value="infantil">Infantil</SelectItem>
+                <SelectItem value="animacao">Animação</SelectItem>
+                <SelectItem value="documentario">Documentário</SelectItem>
+                <SelectItem value="acao">Ação</SelectItem>
+                <SelectItem value="romance">Romance</SelectItem>
+                <SelectItem value="ficcao">Ficção Científica</SelectItem>
+              </SelectContent>
+            </Select>
+            {errors.genre && (
+              <p className="text-sm text-red-500">{errors.genre.message}</p>
             )}
           </div>
 

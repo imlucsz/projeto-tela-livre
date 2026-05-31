@@ -27,6 +27,7 @@ const CAROUSEL_EVENTS = [
     description: 'Aclamado drama de Walter Salles baseado na emocionante história real de Eunice Paiva, mostrando sua resiliência e busca por justiça durante a ditadura militar no Brasil.',
     image: 'https://i.imgur.com/X9ieYpi.jpeg',
     category: 'cinema' as const,
+    genre: 'drama',
     approved: true,
   },
   {
@@ -37,6 +38,7 @@ const CAROUSEL_EVENTS = [
     description: 'Uma jornada visualmente deslumbrante pelo clássico de Lewis Carroll, repleta de fantasia, metáforas sobre o amadurecimento e personagens excêntricos como o Chapeleiro Maluco.',
     image: 'https://i.imgur.com/CH8MwS0.jpeg',
     category: 'cinema' as const,
+    genre: 'infantil',
     approved: true,
   },
   {
@@ -47,6 +49,7 @@ const CAROUSEL_EVENTS = [
     description: 'A impressionante história real de Desmond Doss, um médico do exército americano que, por motivos religiosos, se recusou a portar armas e salvou 75 homens na Segunda Guerra Mundial.',
     image: 'https://i.imgur.com/OtnVjut.jpeg',
     category: 'cinema' as const,
+    genre: 'drama',
     approved: true,
   },
   {
@@ -57,6 +60,7 @@ const CAROUSEL_EVENTS = [
     description: 'Thriller de alta tensão focado em um jovem agente de segurança de aeroporto que é chantageado por um viajante misterioso na véspera de Natal, iniciando uma corrida contra o tempo.',
     image: 'https://i.imgur.com/3ZmV4kR.jpeg',
     category: 'cinema' as const,
+    genre: 'acao',
     approved: true,
   },
   {
@@ -67,6 +71,7 @@ const CAROUSEL_EVENTS = [
     description: 'Documentário imersivo que vai além dos cockpits, revelando a engenharia de ponta, as rivalidades históricas e a intensa pressão psicológica sofrida pelos pilotos na categoria máxima do automobilismo.',
     image: 'https://i.imgur.com/QinomOQ.jpeg',
     category: 'cinema' as const,
+    genre: 'documentario',
     approved: true,
   },
   {
@@ -77,6 +82,7 @@ const CAROUSEL_EVENTS = [
     description: 'Ficção científica épica de Christopher Nolan que combina física quântica, buracos de minhoca e dilatação temporal com uma emocionante jornada sobre o amor de um pai e a sobrevivência da humanidade.',
     image: 'https://i.imgur.com/Et1JYuW.jpeg',
     category: 'cinema' as const,
+    genre: 'ficcao',
     approved: true,
   },
   {
@@ -87,6 +93,7 @@ const CAROUSEL_EVENTS = [
     description: 'Inspirado na vida do excêntrico jogador de ping-pong Marty Reisman, o longa explora a vibrante e estilosa subcultura do esporte profissional americano na década de 1950.',
     image: 'https://i.imgur.com/7hPOcbt.jpeg',
     category: 'cinema' as const,
+    genre: 'drama',
     approved: true,
   },
   {
@@ -97,6 +104,7 @@ const CAROUSEL_EVENTS = [
     description: 'Um drama denso e instigante que investiga os limites da moralidade, segredos de família ocultos e o impacto do dogmatismo religioso no cotidiano de uma comunidade isolada.',
     image: 'https://i.imgur.com/7CKbjYI.jpeg',
     category: 'cinema' as const,
+    genre: 'drama',
     approved: true,
   },
   {
@@ -107,6 +115,7 @@ const CAROUSEL_EVENTS = [
     description: 'O visceral e aclamado retrato do combate ao tráfico no Rio de Janeiro sob a ótica do Capitão Nascimento, expondo as entranhas da corrupção policial e o treinamento implacável do BOPE.',
     image: 'https://i.imgur.com/0lasSWW.jpeg',
     category: 'cinema' as const,
+    genre: 'acao',
     approved: true,
   },
   {
@@ -117,6 +126,7 @@ const CAROUSEL_EVENTS = [
     description: 'Ação de alta octanagem pelas ruas de Londres, onde Dom Toretto e sua equipe se unem ao agente Hobbs para derrubar uma organização rival de mercenários em troca do perdão de seus crimes.',
     image: 'https://i.imgur.com/U0luBuP.jpeg',
     category: 'cinema' as const,
+    genre: 'acao',
     approved: true,
   },
 ];
@@ -153,6 +163,11 @@ const eventSchema = new mongoose.Schema(
       type: String,
       enum: ['cinema', 'oficinas', 'projetos'],
       default: 'cinema',
+    },
+    genre: {
+      type: String,
+      enum: ['geral','comedia','drama','infantil','animacao','documentario','acao','romance','ficcao'],
+      default: 'geral',
     },
     approved: {
       type: Boolean,

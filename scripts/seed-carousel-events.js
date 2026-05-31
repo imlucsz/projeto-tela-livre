@@ -20,6 +20,7 @@ const CAROUSEL_EVENTS = [
     description: "Drama brasileiro premiado internacionalmente",
     image: "https://i.imgur.com/X9ieYpi.jpeg",
     category: "cinema",
+    genre: "drama",
     approved: true,
   },
   {
@@ -30,6 +31,7 @@ const CAROUSEL_EVENTS = [
     description: "Clássico infantil em versão cinematográfica",
     image: "https://i.imgur.com/CH8MwS0.jpeg",
     category: "cinema",
+    genre: "infantil",
     approved: true,
   },
   {
@@ -40,6 +42,7 @@ const CAROUSEL_EVENTS = [
     description: "Drama de guerra intenso e emocionante",
     image: "https://i.imgur.com/OtnVjut.jpeg",
     category: "cinema",
+    genre: "drama",
     approved: true,
   },
   {
@@ -50,6 +53,7 @@ const CAROUSEL_EVENTS = [
     description: "Thriller emocionante sobre relações humanas",
     image: "https://i.imgur.com/3ZmV4kR.jpeg",
     category: "cinema",
+    genre: "acao",
     approved: true,
   },
   {
@@ -60,6 +64,7 @@ const CAROUSEL_EVENTS = [
     description: "Documentário sobre o mundo da Fórmula 1",
     image: "https://i.imgur.com/QinomOQ.jpeg",
     category: "cinema",
+    genre: "documentario",
     approved: true,
   },
   {
@@ -70,6 +75,7 @@ const CAROUSEL_EVENTS = [
     description: "Épica ficção científica de Christopher Nolan",
     image: "https://i.imgur.com/Et1JYuW.jpeg",
     category: "cinema",
+    genre: "ficcao",
     approved: true,
   },
   {
@@ -80,6 +86,7 @@ const CAROUSEL_EVENTS = [
     description: "Drama sobre a vida de um jogador de tênis",
     image: "https://i.imgur.com/7hPOcbt.jpeg",
     category: "cinema",
+    genre: "drama",
     approved: true,
   },
   {
@@ -90,6 +97,7 @@ const CAROUSEL_EVENTS = [
     description: "Drama que aborda temas religiosos e morais",
     image: "https://i.imgur.com/7CKbjYI.jpeg",
     category: "cinema",
+    genre: "drama",
     approved: true,
   },
   {
@@ -100,6 +108,7 @@ const CAROUSEL_EVENTS = [
     description: "Thriller policial brasileiro aclamado",
     image: "https://i.imgur.com/0lasSWW.jpeg",
     category: "cinema",
+    genre: "acao",
     approved: true,
   },
   {
@@ -110,6 +119,7 @@ const CAROUSEL_EVENTS = [
     description: "Ação e adrenalina em alta velocidade",
     image: "https://i.imgur.com/U0luBuP.jpeg",
     category: "cinema",
+    genre: "acao",
     approved: true,
   },
 ];
@@ -146,6 +156,11 @@ const eventSchema = new mongoose.Schema(
       type: String,
       enum: ['cinema', 'oficinas', 'projetos'],
       default: 'cinema',
+    },
+    genre: {
+      type: String,
+      enum: ['geral','comedia','drama','infantil','animacao','documentario','acao','romance','ficcao'],
+      default: 'geral',
     },
     approved: {
       type: Boolean,
@@ -184,16 +199,25 @@ async function seedEvents() {
     // await Event.deleteMany({});
     // console.log('🗑️  Eventos antigos removidos');
 
-    // Inserir novos eventos
-    try {
-      const result = await Event.insertMany(CAROUSEL_EVENTS);
-      console.log(`✨ ${result.length} eventos foram criados com sucesso!`);
-    } catch (error) {
-      if (error.code === 11000) {
-        console.log('⚠️  Alguns eventos já existiam, continuando...');
+    // 2) Garantir que cada item exista no banco (idempotente)
+    const upserted = [];
+
+    for (const item of CAROUSEL_EVENTS) {
+      const existing = await Event.findOne({ title: item.title, date: item.date });
+
+      if (!existing) {
+        await Event.create(item);
+        upserted.push(item.title);
       } else {
-        throw error;
+        // atualiza dados caso tenham mudado
+        await Event.updateOne({ _id: existing._id }, { $set: item });
       }
+    }
+
+    if (upserted.length > 0) {
+      console.log(`✨ ${upserted.length} eventos do carrossel foram criados.`);
+    } else {
+      console.log('✨ Nenhum evento novo foi necessário (tudo já existia).');
     }
 
     console.log('📍 Todos os eventos estão com approved=true e aparecerão no carrossel');

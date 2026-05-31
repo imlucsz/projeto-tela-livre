@@ -60,6 +60,7 @@ export const mockEvents: Event[] = [
     date: "2026-04-15",
     time: "19:00",
     category: "cinema",
+    genre: "geral",
     ngo: {
       name: "Instituto Cultura Viva",
       logo: "https://api.dicebear.com/7.x/initials/svg?seed=ICV&backgroundColor=ea580c",
@@ -89,6 +90,7 @@ export const mockEvents: Event[] = [
     date: "2026-04-20",
     time: "14:00",
     category: "oficinas",
+    genre: "geral",
     ngo: {
       name: "Jovens Criadores",
       logo: "https://api.dicebear.com/7.x/initials/svg?seed=JC&backgroundColor=0891b2",
@@ -114,6 +116,7 @@ export const mockEvents: Event[] = [
     date: "2026-04-25",
     time: "18:30",
     category: "projetos",
+    genre: "documentario",
     ngo: {
       name: "Coletivo Diversidade",
       logo: "https://api.dicebear.com/7.x/initials/svg?seed=CD&backgroundColor=7c3aed",
@@ -137,6 +140,7 @@ export const mockEvents: Event[] = [
     date: "2026-05-01",
     time: "15:00",
     category: "cinema",
+    genre: "infantil",
     ngo: {
       name: "Amigos da Infância",
       logo: "https://api.dicebear.com/7.x/initials/svg?seed=AI&backgroundColor=16a34a",
@@ -165,6 +169,7 @@ export const mockEvents: Event[] = [
     date: "2026-05-10",
     time: "10:00",
     category: "oficinas",
+    genre: "geral",
     ngo: {
       name: "Escola Livre de Cinema",
       logo: "https://api.dicebear.com/7.x/initials/svg?seed=ELC&backgroundColor=dc2626",
@@ -188,6 +193,7 @@ export const mockEvents: Event[] = [
     date: "2026-05-15",
     time: "19:30",
     category: "projetos",
+    genre: "documentario",
     ngo: {
       name: "Tela para Todos",
       logo: "https://api.dicebear.com/7.x/initials/svg?seed=TPT&backgroundColor=2563eb",

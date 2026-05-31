@@ -4,22 +4,36 @@ import { useState, useEffect } from "react";
 import { ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EventCard, EventCardSkeleton } from "@/components/event-card";
-import { mockEvents } from "@/lib/mock-data";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export function EventsSection() {
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("all");
+  const [events, setEvents] = useState<any[]>([]);
 
   useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 1000);
-    return () => clearTimeout(timer);
+    let mounted = true;
+    async function load() {
+      setIsLoading(true);
+      try {
+        const res = await fetch('/api/events?approved=true');
+        const json = await res.json();
+        if (mounted && json?.success) {
+          const normalized = (json.data || []).map((e: any) => ({ ...e, id: e._id || e.id }));
+          setEvents(normalized);
+        }
+      } catch (e) {
+        console.error('Erro ao carregar eventos:', e);
+      } finally {
+        if (mounted) setIsLoading(false);
+      }
+    }
+    load();
+    return () => { mounted = false };
   }, []);
 
   const filteredEvents =
-    activeTab === "all"
-      ? mockEvents
-      : mockEvents.filter((event) => event.category === activeTab);
+    activeTab === "all" ? events : events.filter((event) => event.category === activeTab);
 
   return (
     <section className="bg-background py-16 sm:py-20">
