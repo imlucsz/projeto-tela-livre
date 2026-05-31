@@ -9,6 +9,10 @@ import { Badge } from "@/components/ui/badge";
 import type { Event } from "@/lib/mock-data";
 import { useState } from "react";
 
+type EventCardProps = Partial<Event> & {
+  _id?: { toString?: () => string };
+};
+
 const categoryLabels = {
   cinema: "Cinema gratuito",
   oficinas: "Oficina",
@@ -21,7 +25,7 @@ const categoryColors = {
   projetos: "bg-chart-3/10 text-chart-3 hover:bg-chart-3/20",
 };
 
-export function EventCard({ event }: { event: Event }) {
+export function EventCard({ event }: { event: EventCardProps }) {
   const [saved, setSaved] = useState(false);
   const eventDate = event.date ? new Date(event.date) : new Date();
   const eventId = event._id?.toString?.() || event.id || '';

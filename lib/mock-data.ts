@@ -8,6 +8,7 @@ export interface Event {
   date: string;
   time: string;
   category: "cinema" | "oficinas" | "projetos";
+  genre?: string;
   ngo: {
     name: string;
     logo: string;
