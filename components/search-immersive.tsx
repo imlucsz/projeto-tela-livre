@@ -50,23 +50,22 @@ export function SearchImmersive({ isOpen: externalIsOpen, onOpenChange }: Search
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  // Filtrar eventos baseado na query
   const filteredEvents = useMemo(() => {
-    if (!debouncedQuery) return events.slice(0, 4); // Mostra primeiros 4 se sem query
-    return events.filter(event =>
-      event.title.toLowerCase().includes(debouncedQuery.toLowerCase()) ||
-      (event.category || '').toLowerCase().includes(debouncedQuery.toLowerCase()) ||
-      (event.location || '').toLowerCase().includes(debouncedQuery.toLowerCase()) ||
-      ((event.genre || '') as string).toLowerCase().includes(debouncedQuery.toLowerCase())
-    ).slice(0, 8); // Limita a 8 resultados
-  }, [debouncedQuery]);
+    if (!debouncedQuery) return events.slice(0, 4);
+    return events.slice(0, 8);
+  }, [debouncedQuery, events]);
 
-  // Carrega eventos aprovados uma vez (para busca local)
+  // Carrega resultados da busca do backend para manter a pesquisa global e flexível
   useEffect(() => {
     let mounted = true;
     async function load() {
       try {
-        const res = await fetch('/api/events?approved=true');
+        const params = new URLSearchParams({ approved: 'true' });
+        if (debouncedQuery) {
+          params.set('search', debouncedQuery);
+        }
+
+        const res = await fetch(`/api/events?${params.toString()}`);
         const json = await res.json();
         if (mounted && json?.success) {
           const normalized = (json.data || []).map((e: any) => ({ ...e, id: e._id || e.id }));
@@ -78,7 +77,7 @@ export function SearchImmersive({ isOpen: externalIsOpen, onOpenChange }: Search
     }
     load();
     return () => { mounted = false };
-  }, []);
+  }, [debouncedQuery]);
 
   const handleEventClick = (eventId: string) => {
     setIsOpen(false);
@@ -99,7 +98,7 @@ export function SearchImmersive({ isOpen: externalIsOpen, onOpenChange }: Search
       >
         <div className="flex items-center w-full h-14 px-5 bg-white border border-border rounded-full shadow-sm group-hover:shadow-md transition-all duration-300">
           <Search className="w-5 h-5 text-muted-foreground mr-3" />
-          <span className="text-muted-foreground flex-1">Buscar eventos, shows, teatros...</span>
+          <span className="text-muted-foreground flex-1">Buscar por filme, local ou ONG...</span>
           <div className="hidden md:flex items-center px-2 py-1 bg-slate-100 rounded text-xs text-slate-500 font-mono">
             QUALQUER LUGAR
           </div>
@@ -123,7 +122,7 @@ export function SearchImmersive({ isOpen: externalIsOpen, onOpenChange }: Search
                   <input
                     autoFocus
                     type="text"
-                    placeholder="O que você está procurando?"
+                    placeholder="Digite título, local ou ONG..."
                     className="w-full h-14 pl-14 pr-4 text-xl outline-none bg-transparent"
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
@@ -198,6 +197,9 @@ export function SearchImmersive({ isOpen: externalIsOpen, onOpenChange }: Search
                         <div className="flex flex-col justify-center flex-1">
                           <span className="text-xs font-bold text-primary uppercase">{event.category}</span>
                           <h5 className="font-bold text-slate-800 line-clamp-2">{event.title}</h5>
+                          {event.createdBy?.name && (
+                            <p className="text-xs text-slate-500 mt-1">Organizado por {event.createdBy.name}</p>
+                          )}
                           <p className="text-xs text-slate-500 flex items-center gap-1 mt-1">
                             <MapPin className="w-3 h-3" /> {event.location}
                           </p>
