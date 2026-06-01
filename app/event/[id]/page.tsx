@@ -43,7 +43,6 @@ function mapDbEventToUiEvent(event: any) {
       communities: event.impact?.communities || 0,
       sessions: event.impact?.sessions || 0,
     },
-    participantCount: Array.isArray(event.participants) ? event.participants.length : 0,
     participants: Array.isArray(event.participants) ? event.participants : [],
     volunteers: Array.isArray(event.volunteers) ? event.volunteers : [],
   };
