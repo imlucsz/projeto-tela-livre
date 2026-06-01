@@ -19,12 +19,12 @@ export async function POST(
     const eventId = resolvedParams.id
     const userId = session.user.id
 
-    const event = await Event.findById(eventId)
+    const event = await Event.findById(eventId).select('participants')
     if (!event) {
       return NextResponse.json({ error: 'Evento não encontrado' }, { status: 404 })
     }
 
-    const user = await User.findById(userId)
+    const user = await User.findById(userId).select('_id')
     if (!user) {
       return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 })
     }
@@ -40,18 +40,23 @@ export async function POST(
       )
     }
 
-    event.participants.push(user._id)
-    if (!(user.participatingEvents as any[]).some((item) => item.toString() === eventId)) {
-      user.participatingEvents.push(event._id)
-    }
+    const updatedEvent = await Event.findByIdAndUpdate(
+      eventId,
+      { $addToSet: { participants: user._id } },
+      { new: true, runValidators: false }
+    ).select('participants')
 
-    await Promise.all([event.save(), user.save()])
+    await User.findByIdAndUpdate(
+      userId,
+      { $addToSet: { participatingEvents: eventId } },
+      { new: true, runValidators: false }
+    )
 
     return NextResponse.json(
-      { 
-        success: true, 
+      {
+        success: true,
         message: 'Participação confirmada',
-        participantCount: event.participants.length
+        participantCount: updatedEvent?.participants?.length || 0
       },
       { status: 200 }
     )
@@ -59,7 +64,7 @@ export async function POST(
     console.error('Erro POST /api/events/[id]/participate:', error)
     const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
     console.error('Stack trace:', errorMessage)
-    
+
     return NextResponse.json(
       { error: 'Erro ao processar participação', details: errorMessage },
       { status: 500 }
@@ -82,12 +87,12 @@ export async function DELETE(
     const eventId = resolvedParams.id
     const userId = session.user.id
 
-    const event = await Event.findById(eventId)
+    const event = await Event.findById(eventId).select('date participants')
     if (!event) {
       return NextResponse.json({ error: 'Evento não encontrado' }, { status: 404 })
     }
 
-    const user = await User.findById(userId)
+    const user = await User.findById(userId).select('_id')
     if (!user) {
       return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 })
     }
@@ -107,20 +112,23 @@ export async function DELETE(
       )
     }
 
-    event.participants = (event.participants as any[]).filter(
-      (participant) => participant.toString() !== userId
-    )
-    user.participatingEvents = (user.participatingEvents as any[]).filter(
-      (item) => item.toString() !== eventId
-    )
+    const updatedEvent = await Event.findByIdAndUpdate(
+      eventId,
+      { $pull: { participants: user._id } },
+      { new: true, runValidators: false }
+    ).select('participants')
 
-    await Promise.all([event.save(), user.save()])
+    await User.findByIdAndUpdate(
+      userId,
+      { $pull: { participatingEvents: eventId } },
+      { new: true, runValidators: false }
+    )
 
     return NextResponse.json(
-      { 
-        success: true, 
+      {
+        success: true,
         message: 'Participação cancelada',
-        participantCount: event.participants.length
+        participantCount: updatedEvent?.participants?.length || 0
       },
       { status: 200 }
     )
@@ -128,7 +136,7 @@ export async function DELETE(
     console.error('Erro DELETE /api/events/[id]/participate:', error)
     const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
     console.error('Stack trace:', errorMessage)
-    
+
     return NextResponse.json(
       { error: 'Erro ao cancelar participação', details: errorMessage },
       { status: 500 }
