@@ -225,13 +225,13 @@ export default function EventsManagement() {
                       </div>
                       <div className="flex items-center gap-2">
                         <Users className="h-4 w-4 text-amber-400" />
-                        {event.createdBy.name}
+                        {event.createdBy?.name || "Sistema"}
                       </div>
                     </div>
 
                     {/* Actions */}
                     <div className="flex flex-wrap gap-2 justify-end">
-                      {isAdmin || event.createdBy.email === session?.user?.email ? (
+                      {isAdmin || event.createdBy?.email === session?.user?.email ? (
                         <>
                           <Button
                             size="sm"
