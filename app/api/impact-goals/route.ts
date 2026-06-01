@@ -12,26 +12,24 @@ function currentYear() {
 export async function GET() {
   try {
     const session = await auth()
-    if (!session?.user) {
-      return NextResponse.json({ success: false, error: 'Não autenticado' }, { status: 401 })
-    }
-
+    
     await connectDB()
 
-    const role = (session.user as any)?.role || 'USER'
-    const userId = (session.user as any)?.id
+    const role = (session?.user as any)?.role || 'USER'
+    const userId = (session?.user as any)?.id
 
     const year = currentYear()
 
     // ADM: meta global (ngoId=null)
     // NGO: meta da ONG (ngoId=userId)
-    const filter = role === 'ADMIN' ? { ngoId: null, year } : { ngoId: userId, year }
+    // USER: dados padrão (sem erro)
+    const filter = role === 'ADMIN' ? { ngoId: null, year } : (userId ? { ngoId: userId, year } : null)
 
-    const goal = await ImpactGoal.findOne(filter).lean()
+    const goal = filter ? await ImpactGoal.findOne(filter).lean() : null
 
     const data = {
       year,
-      ngoId: role === 'ADMIN' ? null : userId,
+      ngoId: role === 'ADMIN' ? null : userId ?? null,
       metaPeople: goal?.metaPeople ?? 0,
       metaSessions: goal?.metaSessions ?? 0,
     }

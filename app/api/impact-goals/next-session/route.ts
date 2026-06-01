@@ -20,7 +20,7 @@ export async function GET() {
   try {
     const session = await auth()
 
-    // Não bloquear caso não exista sessão (Render/Edge). Dashboard já valida acesso.
+    // RSC não bloqueia - retorna dados padrão se necessário
     await connectDB()
 
     const role = (session?.user as any)?.role || 'ADMIN'
@@ -29,10 +29,10 @@ export async function GET() {
     const now = new Date()
 
     const filter: any = { approved: true, date: { $gte: now } }
+    // Somente NGO com userId filtra por createdBy
     if (role === 'NGO' && userId) filter.createdBy = userId
 
     const nextEvent = await Event.findOne(filter).sort({ date: 1 }).select({ date: 1 }).lean()
-
 
     if (!nextEvent?.date) {
       return NextResponse.json({ success: true, data: { nextAt: null, countdown: null } }, { status: 200 })
