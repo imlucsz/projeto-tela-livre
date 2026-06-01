@@ -47,11 +47,21 @@ export async function POST(
 
     await Promise.all([event.save(), user.save()])
 
-    return NextResponse.json({ success: true, message: 'Participação confirmada' })
+    return NextResponse.json(
+      { 
+        success: true, 
+        message: 'Participação confirmada',
+        participantCount: event.participants.length
+      },
+      { status: 200 }
+    )
   } catch (error) {
     console.error('Erro POST /api/events/[id]/participate:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
+    console.error('Stack trace:', errorMessage)
+    
     return NextResponse.json(
-      { error: 'Erro ao processar participação' },
+      { error: 'Erro ao processar participação', details: errorMessage },
       { status: 500 }
     )
   }
@@ -106,11 +116,21 @@ export async function DELETE(
 
     await Promise.all([event.save(), user.save()])
 
-    return NextResponse.json({ success: true, message: 'Participação cancelada' })
+    return NextResponse.json(
+      { 
+        success: true, 
+        message: 'Participação cancelada',
+        participantCount: event.participants.length
+      },
+      { status: 200 }
+    )
   } catch (error) {
     console.error('Erro DELETE /api/events/[id]/participate:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
+    console.error('Stack trace:', errorMessage)
+    
     return NextResponse.json(
-      { error: 'Erro ao cancelar participação' },
+      { error: 'Erro ao cancelar participação', details: errorMessage },
       { status: 500 }
     )
   }
