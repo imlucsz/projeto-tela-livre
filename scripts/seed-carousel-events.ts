@@ -129,7 +129,7 @@ const CAROUSEL_EVENTS = [
     genre: 'acao',
     approved: true,
   },
-];
+] as const;
 
 // Schema de Event
 const eventSchema = new mongoose.Schema(
