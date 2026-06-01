@@ -594,12 +594,13 @@ export async function CinemaDashboard() {
                   Gerar Ingressos
                 </Button>
               </Link>
-              <Link href="/dashboard/settings">
+              <Link href="/dashboard/ngo-requests">
                 <Button className="w-full justify-start bg-black/20 hover:bg-black/30 border border-amber-500/10 text-amber-100 h-11">
                   <Users className="mr-3 h-5 w-5 text-amber-400" />
                   Cadastrar ONG
                 </Button>
               </Link>
+
             </div>
 
             {/* Recent Activity */}
