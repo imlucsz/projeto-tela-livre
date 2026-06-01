@@ -116,45 +116,16 @@ export async function CinemaDashboard() {
   const isUser = session?.user?.role === "USER";
   const showUserWarning = isUser;
 
-  const metrics = await getMetrics();
+  // Dados padrão - não fazer fetches RSC que podem falhar
+  const metrics = {
+    totalPeople: 0,
+    totalSessions: 0,
+    totalEvents: 0,
+  };
 
-  const baseUrl = process.env.NEXTAUTH_URL || 'https://projeto-tela-livre.onrender.com';
-
-  let impactGoalsJson = null;
-  try {
-    const impactGoalsRes = await fetch(`${baseUrl}/api/impact-goals`, {
-      next: { revalidate: 60 },
-      cache: 'force-cache',
-    })
-    if (impactGoalsRes.ok) {
-      impactGoalsJson = await impactGoalsRes.json();
-    } else {
-      console.error('[CinemaDashboard] Impact goals response not ok:', impactGoalsRes.status);
-    }
-  } catch (error) {
-    console.error('[CinemaDashboard] Error fetching impact goals:', error);
-  }
-
-  const metaPeople = impactGoalsJson?.success ? impactGoalsJson?.data?.metaPeople ?? 0 : 0
-  const metaSessions = impactGoalsJson?.success ? impactGoalsJson?.data?.metaSessions ?? 0 : 0
-
-  let nextSessionJson = null;
-  try {
-    const nextSessionRes = await fetch(`${baseUrl}/api/impact-goals/next-session`, {
-      next: { revalidate: 60 },
-      cache: 'force-cache',
-    })
-    if (nextSessionRes.ok) {
-      nextSessionJson = await nextSessionRes.json();
-    } else {
-      console.error('[CinemaDashboard] Next session response not ok:', nextSessionRes.status);
-    }
-  } catch (error) {
-    console.error('[CinemaDashboard] Error fetching next session:', error);
-  }
-
-  const nextSessionCountdown = nextSessionJson?.success ? nextSessionJson?.data?.countdown ?? null : null
-
+  const metaPeople = 0;
+  const metaSessions = 0;
+  const nextSessionCountdown = null;
 
   const pessoasImpactadas = metrics?.totalPeople ?? null;
   const sessoesRealizadas = metrics?.totalSessions ?? null;
