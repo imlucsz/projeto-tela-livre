@@ -187,22 +187,19 @@ export async function CinemaDashboard() {
     { icon: Clapperboard, label: "Painel", active: true, href: "#" },
     { icon: Film, label: "Eventos", active: false, href: "/dashboard/events" },
     { icon: Calendar, label: "Sessões", active: false, href: "/dashboard/sessions" },
-    { icon: Users, label: "Beneficiários", active: false, href: "/dashboard/beneficiaries" },
-    { icon: Ticket, label: "Ingressos", active: false, href: "/dashboard/tickets" },
   ];
 
   const managementItems = [
     { icon: FileText, label: "Relatórios", href: "/dashboard/reports" },
     { icon: Heart, label: "Doadores", href: "/dashboard/donors" },
     { icon: MessageSquare, label: "Mensagens", href: "/dashboard/messages" },
-    { icon: Video, label: "Acervo", href: "/dashboard/archive" },
     { icon: TrendingUp, label: "Métricas", href: "/dashboard/metrics" },
   ];
 
   const settingsItems = [
     { icon: Settings, label: "Ajustes", href: "/dashboard/settings" },
-    { icon: MapPin, label: "Locais", href: "/dashboard/locations" },
   ];
+
 
   const events = defaultSessions;
 
