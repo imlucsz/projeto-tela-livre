@@ -1,13 +1,11 @@
 import { auth } from '@/auth'
 import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
 
 // 🔐 Middleware protegido com NextAuth
+// Objetivo: não quebrar /dashboard em ambientes onde `req.auth`/token
+// pode demorar (ex: Edge/Render). Só força redirect quando realmente
+// existir sessão e o usuário estiver em login/register.
 export default auth((req) => {
-  // Em Edge/Render, req.auth pode não estar sempre disponível.
-  // Para não quebrar o payload do /dashboard, só redirecionamos login/register
-  // quando houver sessão.
-
   const isLoginPage = req.nextUrl.pathname === '/login'
   const isRegisterPage = req.nextUrl.pathname === '/register'
 
@@ -18,12 +16,7 @@ export default auth((req) => {
   return NextResponse.next()
 })
 
-
 export const config = {
-  matcher: [
-    '/dashboard/:path*',
-    '/profile/:path*',
-    '/login',
-    '/register'
-  ]
+  matcher: ['/dashboard/:path*', '/profile/:path*', '/login', '/register'],
 }
+

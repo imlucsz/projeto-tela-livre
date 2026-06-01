@@ -5,14 +5,14 @@ import { CinemaDashboard } from "@/components/dashboard/cinema-dashboard";
 export default async function DashboardPage() {
   const session = await auth();
 
-  console.log("[DEBUG] Dashboard Page - Session:", {
-    exists: !!session,
-    userExists: !!session?.user,
-    userName: session?.user?.name,
-    userEmail: session?.user?.email,
-    userRole: session?.user?.role,
-    roleType: typeof session?.user?.role
+  console.log("[DEBUG] /dashboard - entered page.tsx", {
+    now: new Date().toISOString(),
+    hasSession: !!session,
+    hasUser: !!session?.user,
+    userRole: (session?.user as any)?.role,
+    userId: (session?.user as any)?.id,
   });
+
 
   const userRole = session?.user?.role || "USER";
   
