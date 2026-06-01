@@ -116,16 +116,59 @@ export async function CinemaDashboard() {
   const isUser = session?.user?.role === "USER";
   const showUserWarning = isUser;
 
-  // Dados padrão - não fazer fetches RSC que podem falhar
-  const metrics = {
+  // Dados padrão (fallback). Vamos tentar buscar dados reais e, se falhar, manter fallback.
+  const metricsFallback = {
     totalPeople: 0,
     totalSessions: 0,
     totalEvents: 0,
   };
 
-  const metaPeople = 0;
-  const metaSessions = 0;
-  const nextSessionCountdown = null;
+  let metrics = metricsFallback
+  let metaPeople = 0
+  let metaSessions = 0
+  let nextSessionCountdown: string | null = null
+
+  try {
+    const m = await getMetrics()
+    if (m) metrics = m
+  } catch {
+    metrics = metricsFallback
+  }
+
+  try {
+    const impactGoalsRes = await fetch('/api/impact-goals', {
+      next: { revalidate: 60 },
+      cache: 'force-cache',
+    })
+
+    if (impactGoalsRes.ok) {
+      const impactGoalsJson = await impactGoalsRes.json()
+      if (impactGoalsJson?.success) {
+        metaPeople = impactGoalsJson?.data?.metaPeople ?? 0
+        metaSessions = impactGoalsJson?.data?.metaSessions ?? 0
+      }
+    }
+  } catch {
+    metaPeople = 0
+    metaSessions = 0
+  }
+
+  try {
+    const nextSessionRes = await fetch('/api/impact-goals/next-session', {
+      next: { revalidate: 60 },
+      cache: 'force-cache',
+    })
+
+    if (nextSessionRes.ok) {
+      const nextSessionJson = await nextSessionRes.json()
+      if (nextSessionJson?.success) {
+        nextSessionCountdown = nextSessionJson?.data?.countdown ?? null
+      }
+    }
+  } catch {
+    nextSessionCountdown = null
+  }
+
 
   const pessoasImpactadas = metrics?.totalPeople ?? null;
   const sessoesRealizadas = metrics?.totalSessions ?? null;
