@@ -17,7 +17,7 @@ async function makeAdmin() {
     await connectDB();
     console.log('✅ Conectado!\n');
     
-    const email = 'lucasaraujosouza05@gmail.com';
+    const email = 'luc@gmail.com';
     
     console.log(`🔍 Procurando usuário: ${email}...`);
     
