@@ -296,10 +296,10 @@ export async function CinemaDashboard() {
 
 
   const nextEventsThisMonth = await nextEventsThisMonthPromise
-  const nextFiveSessions = await nextFiveSessionsPromise
 
-  // Para garantir regra do cargo na lista (admin=global, NGO=apenas o que postou)
-  const nextFiveSessionsFiltered = nextFiveSessions ?? []
+  // Para “Próximos Eventos” no dashboard (somente mês atual), usamos exclusivamente a rota this-month.
+  const monthEvents = (nextEventsThisMonth?.events ?? []) as any[]
+
 
   return (
 
@@ -511,9 +511,10 @@ export async function CinemaDashboard() {
               </div>
 
               <div className="space-y-4 max-h-96 overflow-y-auto">
-                {(((nextEventsThisMonth?.events?.length ? nextEventsThisMonth.events : nextFiveSessionsFiltered) as any[]) || [])
+                {(((nextEventsThisMonth?.events?.length ? nextEventsThisMonth.events : monthEvents) as any[]) || [])
                   .slice(0, 5)
                   .map((session, index) => (
+
 
                     <div
                       key={index}
