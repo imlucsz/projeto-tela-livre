@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { ArrowLeft, Share2, Bookmark } from "lucide-react";
+import { ArrowLeft, Share2, Bookmark, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { Event } from "@/lib/mock-data";
@@ -45,6 +45,12 @@ export function EventBanner({ event }: { event: Event }) {
           </Button>
 
           <div className="flex items-center gap-2">
+            {(event.participantCount ?? 0) > 0 && (
+              <div className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-background/80 backdrop-blur-sm text-sm font-medium text-foreground">
+                <Users className="h-4 w-4" />
+                <span>{event.participantCount} participantes</span>
+              </div>
+            )}
             <Button
               variant="secondary"
               size="icon"

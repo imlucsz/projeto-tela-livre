@@ -7,6 +7,10 @@ import { auth } from '@/auth';
 
 export const dynamic = 'force-dynamic';
 
+function escapeRegex(text: string) {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 // ============================================
 // Validação com Zod
 // ============================================
@@ -82,6 +86,7 @@ export async function GET(req: NextRequest) {
 
     const searchParams = req.nextUrl.searchParams;
     const approvedOnly = searchParams.get('approved') === 'true';
+    const search = searchParams.get('search')?.trim();
 
     await connectDB();
 
@@ -90,11 +95,40 @@ export async function GET(req: NextRequest) {
 
     // Se pedir apenas eventos aprovados (público)
     if (approvedOnly) {
-      query = { approved: true };
-      events = await Event.find(query)
-        .populate('createdBy', 'name email role image')
-        .sort({ createdAt: -1 })
-        .lean();
+      if (search) {
+        const searchRegex = new RegExp(escapeRegex(search), 'i');
+
+        events = await Event.aggregate([
+          { $match: { approved: true } },
+          {
+            $lookup: {
+              from: 'users',
+              localField: 'createdBy',
+              foreignField: '_id',
+              as: 'createdBy'
+            }
+          },
+          { $unwind: { path: '$createdBy', preserveNullAndEmptyArrays: true } },
+          {
+            $match: {
+              $or: [
+                { title: searchRegex },
+                { description: searchRegex },
+                { location: searchRegex },
+                { address: searchRegex },
+                { 'createdBy.name': searchRegex }
+              ]
+            }
+          },
+          { $sort: { createdAt: -1 } }
+        ]).exec();
+      } else {
+        query = { approved: true };
+        events = await Event.find(query)
+          .populate('createdBy', 'name email role image')
+          .sort({ createdAt: -1 })
+          .lean();
+      }
     } else {
       // Requer autenticação para ver não-aprovados
       if (!session?.user) {

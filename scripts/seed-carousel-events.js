@@ -10,6 +10,35 @@
 require('dotenv').config({ path: '.env.local' });
 
 const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
+
+// Definir schema de User (copiado do modelo) para criar ONG mock
+const userSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: true,
+    trim: true,
+  },
+  email: {
+    type: String,
+    required: true,
+    unique: true,
+    lowercase: true,
+  },
+  password: {
+    type: String,
+    required: true,
+  },
+  role: {
+    type: String,
+    enum: ['USER', 'NGO', 'ADMIN'],
+    default: 'NGO',
+  },
+  image: {
+    type: String,
+    default: '',
+  },
+}, { timestamps: true });
 
 const CAROUSEL_EVENTS = [
   {
@@ -166,6 +195,13 @@ const eventSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    participants: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        default: []
+      }
+    ],
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
@@ -188,29 +224,53 @@ async function seedEvents() {
     await mongoose.connect(mongoUri);
     console.log('✅ Conectado ao MongoDB');
 
-    // Criar modelo
+    // Criar modelos
+    const User = mongoose.model('User', userSchema, 'users');
     const Event = mongoose.model('Event', eventSchema, 'events');
+
+    // Step 1: Criar ou buscar ONG mock genérica
+    let ongMock = await User.findOne({ email: 'ong-sistema@telalivre.org' });
+
+    if (!ongMock) {
+      console.log('📝 Criando ONG genérica para seed...');
+      const salt = await bcrypt.genSalt(12);
+      const hashedPassword = await bcrypt.hash('SenhaSegura123!', salt);
+
+      ongMock = await User.create({
+        name: 'Tela Livre - Sistema',
+        email: 'ong-sistema@telalivre.org',
+        password: hashedPassword,
+        role: 'NGO',
+        image: 'https://api.dicebear.com/7.x/initials/svg?seed=TLS',
+      });
+      console.log('✅ ONG mock criada:', ongMock._id);
+    } else {
+      console.log('✅ ONG mock encontrada:', ongMock._id);
+    }
+
+    // Step 2: Adicionar createdBy a cada evento do carrossel
+    const eventsWithCreator = CAROUSEL_EVENTS.map((event) => ({
+      ...event,
+      createdBy: ongMock._id,
+      participants: [], // Iniciar com array vazio
+    }));
 
     // Verificar quantos eventos já existem
     const existingCount = await Event.countDocuments();
     console.log(`📊 Eventos existentes: ${existingCount}`);
 
-    // Remover eventos antigos (opcional - comente se quiser manter)
-    // await Event.deleteMany({});
-    // console.log('🗑️  Eventos antigos removidos');
-
-    // 2) Garantir que cada item exista no banco (idempotente)
+    // Step 3: Garantir que cada item exista no banco (idempotente)
     const upserted = [];
 
-    for (const item of CAROUSEL_EVENTS) {
+    for (const item of eventsWithCreator) {
       const existing = await Event.findOne({ title: item.title, date: item.date });
 
       if (!existing) {
         await Event.create(item);
         upserted.push(item.title);
       } else {
-        // atualiza dados caso tenham mudado
-        await Event.updateOne({ _id: existing._id }, { $set: item });
+        // atualiza dados caso tenham mudado (e garante que createdBy está setado)
+        await Event.updateOne({ _id: existing._id }, { $set: { createdBy: ongMock._id, participants: [] } });
       }
     }
 
@@ -220,10 +280,10 @@ async function seedEvents() {
       console.log('✨ Nenhum evento novo foi necessário (tudo já existia).');
     }
 
-    console.log('📍 Todos os eventos estão com approved=true e aparecerão no carrossel');
+    console.log('📍 Todos os eventos estão com approved=true e createdBy atribuído');
     
     // Listar eventos criados
-    const allEvents = await Event.find({}).select('title date location image approved');
+    const allEvents = await Event.find({}).select('title date location image approved createdBy').populate('createdBy', 'name');
     console.log('\n📽️  Eventos no banco de dados:');
     allEvents.forEach((event) => {
       const dateStr = new Date(event.date).toLocaleDateString('pt-BR', {
@@ -232,7 +292,8 @@ async function seedEvents() {
         year: 'numeric',
       });
       const approvalStatus = event.approved ? '✅ Aprovado' : '⏳ Pendente';
-      console.log(`  • ${event.title} (${dateStr}) - ${approvalStatus}`);
+      const creatorName = event.createdBy?.name || 'Sem ONG';
+      console.log(`  • ${event.title} (${dateStr}) - ${approvalStatus} - Criado por: ${creatorName}`);
     });
 
     console.log('\n🎬 Seed completado com sucesso!');
