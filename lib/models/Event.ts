@@ -126,7 +126,8 @@ const EventSchema = new Schema<IEvent>(
     createdBy: {
       type: Schema.Types.ObjectId,
       ref: 'User',
-      required: [true, 'ID do criador é obrigatório']
+      required: false,
+      default: null
     },
     approved: {
       type: Boolean,
