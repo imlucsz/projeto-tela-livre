@@ -82,13 +82,17 @@ type MetricsResponse = {
 async function getMetrics(): Promise<{ totalPeople: number; totalSessions: number; totalEvents: number } | null> {
 
   try {
-    const res = await fetch("/api/metrics", {
+    const baseUrl = process.env.NEXTAUTH_URL || 'https://projeto-tela-livre.onrender.com';
+    const res = await fetch(`${baseUrl}/api/metrics`, {
       // Revalida em intervalos para performance sem ficar sempre “ao vivo”
       next: { revalidate: 60 },
       cache: "force-cache",
     });
 
-    if (!res.ok) return null;
+    if (!res.ok) {
+      console.error('[getMetrics] Response not ok:', res.status);
+      return null;
+    }
     const json = (await res.json()) as MetricsResponse;
     if (!json?.success || !json?.data) return null;
 
@@ -98,7 +102,8 @@ async function getMetrics(): Promise<{ totalPeople: number; totalSessions: numbe
       totalEvents: (json.data as any).totalEvents ?? 0,
     };
 
-  } catch {
+  } catch (error) {
+    console.error('[getMetrics] Error:', error);
     return null;
   }
 }
@@ -113,21 +118,41 @@ export async function CinemaDashboard() {
 
   const metrics = await getMetrics();
 
-  const impactGoalsRes = await fetch('/api/impact-goals', {
-    next: { revalidate: 60 },
-    cache: 'force-cache',
-  })
+  const baseUrl = process.env.NEXTAUTH_URL || 'https://projeto-tela-livre.onrender.com';
 
-  const impactGoalsJson = impactGoalsRes.ok ? await impactGoalsRes.json() : null
+  let impactGoalsJson = null;
+  try {
+    const impactGoalsRes = await fetch(`${baseUrl}/api/impact-goals`, {
+      next: { revalidate: 60 },
+      cache: 'force-cache',
+    })
+    if (impactGoalsRes.ok) {
+      impactGoalsJson = await impactGoalsRes.json();
+    } else {
+      console.error('[CinemaDashboard] Impact goals response not ok:', impactGoalsRes.status);
+    }
+  } catch (error) {
+    console.error('[CinemaDashboard] Error fetching impact goals:', error);
+  }
+
   const metaPeople = impactGoalsJson?.success ? impactGoalsJson?.data?.metaPeople ?? 0 : 0
   const metaSessions = impactGoalsJson?.success ? impactGoalsJson?.data?.metaSessions ?? 0 : 0
 
-  const nextSessionRes = await fetch('/api/impact-goals/next-session', {
-    next: { revalidate: 60 },
-    cache: 'force-cache',
-  })
+  let nextSessionJson = null;
+  try {
+    const nextSessionRes = await fetch(`${baseUrl}/api/impact-goals/next-session`, {
+      next: { revalidate: 60 },
+      cache: 'force-cache',
+    })
+    if (nextSessionRes.ok) {
+      nextSessionJson = await nextSessionRes.json();
+    } else {
+      console.error('[CinemaDashboard] Next session response not ok:', nextSessionRes.status);
+    }
+  } catch (error) {
+    console.error('[CinemaDashboard] Error fetching next session:', error);
+  }
 
-  const nextSessionJson = nextSessionRes.ok ? await nextSessionRes.json() : null
   const nextSessionCountdown = nextSessionJson?.success ? nextSessionJson?.data?.countdown ?? null : null
 
 
