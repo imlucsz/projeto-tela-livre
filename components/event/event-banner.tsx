@@ -45,10 +45,10 @@ export function EventBanner({ event }: { event: Event }) {
           </Button>
 
           <div className="flex items-center gap-2">
-            {(event.participantCount ?? 0) > 0 && (
+            {(event.participants?.length ?? 0) > 0 && (
               <div className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-background/80 backdrop-blur-sm text-sm font-medium text-foreground">
                 <Users className="h-4 w-4" />
-                <span>{event.participantCount} participantes</span>
+                <span>{event.participants.length} participantes</span>
               </div>
             )}
             <Button
