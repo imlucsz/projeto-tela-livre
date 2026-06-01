@@ -7,7 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { CreateEventForm } from "@/components/dashboard/create-event-form";
+
+import { ImpactGoalsEditor } from "@/components/dashboard/impact-goals-editor";
+
+
 import {
   Users,
   TrendingUp,
@@ -15,24 +18,22 @@ import {
   Search,
   Bell,
   Settings,
-  Plus,
   Filter,
   Download,
   FileText,
   MessageSquare,
   Clapperboard,
   Star,
-  LogOut,
   HelpCircle,
   ChevronRight,
   Film,
   Ticket,
-  Video,
   Heart,
   MapPin,
   Clock,
   Play,
 } from "lucide-react";
+
 import Image from "next/image";
 
 interface Session {
@@ -74,10 +75,12 @@ type MetricsResponse = {
   data?: {
     totalPeople: number;
     totalSessions: number;
+    totalEvents: number;
   };
 };
 
-async function getMetrics(): Promise<{ totalPeople: number; totalSessions: number } | null> {
+async function getMetrics(): Promise<{ totalPeople: number; totalSessions: number; totalEvents: number } | null> {
+
   try {
     const res = await fetch("/api/metrics", {
       // Revalida em intervalos para performance sem ficar sempre “ao vivo”
@@ -92,7 +95,9 @@ async function getMetrics(): Promise<{ totalPeople: number; totalSessions: numbe
     return {
       totalPeople: json.data.totalPeople ?? 0,
       totalSessions: json.data.totalSessions ?? 0,
+      totalEvents: (json.data as any).totalEvents ?? 0,
     };
+
   } catch {
     return null;
   }
@@ -108,6 +113,24 @@ export async function CinemaDashboard() {
 
   const metrics = await getMetrics();
 
+  const impactGoalsRes = await fetch('/api/impact-goals', {
+    next: { revalidate: 60 },
+    cache: 'force-cache',
+  })
+
+  const impactGoalsJson = impactGoalsRes.ok ? await impactGoalsRes.json() : null
+  const metaPeople = impactGoalsJson?.success ? impactGoalsJson?.data?.metaPeople ?? 0 : 0
+  const metaSessions = impactGoalsJson?.success ? impactGoalsJson?.data?.metaSessions ?? 0 : 0
+
+  const nextSessionRes = await fetch('/api/impact-goals/next-session', {
+    next: { revalidate: 60 },
+    cache: 'force-cache',
+  })
+
+  const nextSessionJson = nextSessionRes.ok ? await nextSessionRes.json() : null
+  const nextSessionCountdown = nextSessionJson?.success ? nextSessionJson?.data?.countdown ?? null : null
+
+
   const pessoasImpactadas = metrics?.totalPeople ?? null;
   const sessoesRealizadas = metrics?.totalSessions ?? null;
 
@@ -119,9 +142,9 @@ export async function CinemaDashboard() {
       location: "Centro Comunitário São Paulo",
       date: "15 Abril, 14h",
       attendees: "120 pessoas",
-      status: "Confirmado",
-      genre: "Comédia",
-    },
+                    status: "Confirmado",
+                    genre: "Comédia",
+                  },
     {
       title: "Kiriku e a Feiticeira",
       location: "Escola Municipal Esperança",
@@ -172,16 +195,12 @@ export async function CinemaDashboard() {
       icon: Film,
       color: "text-red-400",
     },
-    { title: "Filmes no Acervo", value: "89", change: "+5 novos", icon: Video, color: "text-amber-300" },
-    { title: "Próximos Eventos", value: "24", change: "Este mês", icon: Calendar, color: "text-red-300" },
   ];
 
 
-  const communities: CommunityReach[] = [
-    { name: "Zona Leste - SP", progress: 85, color: "from-amber-400 to-red-500" },
-    { name: "Centro - RJ", progress: 62, color: "from-red-400 to-amber-500" },
-    { name: "Zona Sul - MG", progress: 48, color: "from-amber-500 to-red-400" },
-  ];
+
+  const communities: CommunityReach[] = [];
+
 
   const navItems = [
     { icon: Clapperboard, label: "Painel", active: true, href: "#" },
@@ -203,8 +222,49 @@ export async function CinemaDashboard() {
 
   const events = defaultSessions;
 
+  const nextEventsThisMonthPromise = (async () => {
+    try {
+      const res = await fetch('/api/events/this-month', {
+        next: { revalidate: 60 },
+        cache: 'force-cache',
+      })
+      if (!res.ok) return null
+      const json = await res.json()
+      if (!json?.success || !json?.data) return null
+      return json.data as { monthLabel: string; count: number; events: any[] }
+    } catch {
+      return null
+    }
+  })()
+
+  // Para a lista “Próximas Sessões”:
+  // - ADMIN: próximas sessões globais (aprovadas) = próximos 5 por data
+  // - NGO: somente o que ela postou (aprovadas) = próximos 5 por data
+  const nextFiveSessionsPromise = (async () => {
+    try {
+      const res = await fetch('/api/events?approved=true', {
+        next: { revalidate: 60 },
+        cache: 'force-cache',
+      })
+      if (!res.ok) return null
+      const json = await res.json()
+      if (!json?.success || !Array.isArray(json?.data)) return null
+      return json.data as any[]
+    } catch {
+      return null
+    }
+  })()
+
+
+  const nextEventsThisMonth = await nextEventsThisMonthPromise
+  const nextFiveSessions = await nextFiveSessionsPromise
+
+  // Para garantir regra do cargo na lista (admin=global, NGO=apenas o que postou)
+  const nextFiveSessionsFiltered = nextFiveSessions ?? []
 
   return (
+
+
     <div className="h-screen relative overflow-hidden bg-black">
       {/* Background com gradiente */}
       <div className="absolute inset-0 bg-gradient-to-br from-black via-black to-black/80" />
@@ -369,10 +429,10 @@ export async function CinemaDashboard() {
                 >
                   <Bell className="h-5 w-5" />
                 </Button>
-                <CreateEventForm />
               </div>
             </div>
           </Card>
+
 
           {/* Stats Cards */}
           <div className="grid grid-cols-4 gap-6">
@@ -397,24 +457,28 @@ export async function CinemaDashboard() {
           <div className="grid grid-cols-2 gap-6">
             {/* Próximas Sessões */}
             <Card className="backdrop-blur-xl bg-black/30 border border-amber-500/20 rounded-3xl p-6">
+
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-semibold text-white">Próximas Sessões</h3>
-                <div className="flex items-center space-x-2">
-                  <Button size="sm" variant="ghost" className="text-amber-100/80 hover:bg-amber-500/10">
-                    <Filter className="mr-2 h-4 w-4" />
-                    Filtrar
-                  </Button>
-                  <Button size="sm" variant="ghost" className="text-amber-100/80 hover:bg-amber-500/10">
-                    <Download className="mr-2 h-4 w-4" />
-                    Exportar
-                  </Button>
+                <div>
+                  <h3 className="text-xl font-semibold text-white">Próximos Eventos</h3>
+                  <p className="text-amber-200/60 text-sm">
+                    {nextEventsThisMonth?.monthLabel ? `Eventos no ${nextEventsThisMonth.monthLabel}` : 'Carregando eventos do mês...'}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-white text-3xl font-bold">{nextEventsThisMonth?.count ?? '—'}</p>
+                  <p className="text-amber-200/60 text-sm">do mês atual</p>
                 </div>
               </div>
 
               <div className="space-y-4 max-h-96 overflow-y-auto">
-                {events.map((session, index) => (
-                  <div
-                    key={index}
+                {(((nextEventsThisMonth?.events?.length ? nextEventsThisMonth.events : nextFiveSessionsFiltered) as any[]) || [])
+                  .slice(0, 5)
+                  .map((session, index) => (
+
+                    <div
+                      key={index}
+
                     className="flex items-center justify-between p-4 bg-black/20 rounded-xl border border-amber-500/10 hover:bg-black/30 transition-all duration-300"
                   >
                     <div className="flex items-center space-x-4 flex-1">
@@ -450,13 +514,13 @@ export async function CinemaDashboard() {
               </div>
             </Card>
 
+
             {/* Impacto Social */}
             <Card className="backdrop-blur-xl bg-black/30 border border-amber-500/20 rounded-3xl p-6">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-xl font-semibold text-white">Impacto Social</h3>
-                <Button size="sm" variant="ghost" className="text-amber-100/80 hover:bg-amber-500/10">
-                  <Settings className="h-4 w-4" />
-                </Button>
+                <ImpactGoalsEditor initialPeople={metaPeople} initialSessions={metaSessions} />
+
               </div>
 
               <div className="space-y-6">
@@ -464,7 +528,8 @@ export async function CinemaDashboard() {
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
                     <span className="text-amber-100/80 text-sm">Meta Anual de Pessoas</span>
-                    <span className="text-white font-semibold">5.000</span>
+                    <span className="text-white font-semibold">{metaPeople.toLocaleString('pt-BR')}</span>
+
                   </div>
                   <div className="w-full bg-black/30 rounded-full h-3">
                     <div
@@ -482,7 +547,8 @@ export async function CinemaDashboard() {
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
                     <span className="text-amber-100/80 text-sm">Meta de Sessões</span>
-                    <span className="text-white font-semibold">200</span>
+                    <span className="text-white font-semibold">{metaSessions.toLocaleString('pt-BR')}</span>
+
                   </div>
                   <div className="w-full bg-black/30 rounded-full h-3">
                     <div
@@ -491,74 +557,27 @@ export async function CinemaDashboard() {
                     ></div>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-red-400">156 realizadas</span>
-                    <span className="text-amber-200/60">78%</span>
+                    <span className="text-red-400">{(sessoesRealizadas ?? 0).toLocaleString('pt-BR')} realizadas</span>
+                    <span className="text-amber-200/60">
+                      {metaSessions > 0 ? Math.round(((sessoesRealizadas ?? 0) / metaSessions) * 100) : 0}%
+                    </span>
+
                   </div>
                 </div>
 
-                {/* Community Reach */}
-                <div className="space-y-3">
-                  <h4 className="text-white font-medium">Comunidades Atendidas</h4>
-                  <div className="space-y-2">
-                    {communities.map((community, index) => (
-                      <div key={index} className="space-y-1">
-                        <div className="flex justify-between text-sm">
-                          <span className="text-amber-100/80">{community.name}</span>
-                          <span className="text-white">{community.progress}%</span>
-                        </div>
-                        <div className="w-full bg-black/30 rounded-full h-2">
-                          <div
-                            className={`bg-gradient-to-r ${community.color} h-2 rounded-full`}
-                            style={{ width: `${community.progress}%` }}
-                          ></div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+
 
                 {/* Next Event Countdown */}
                 <div className="bg-black/20 rounded-xl p-4 text-center border border-amber-500/10">
-                  <p className="text-2xl font-bold text-white">3 dias</p>
+                  <p className="text-2xl font-bold text-white">{nextSessionCountdown ?? '—'}</p>
                   <p className="text-amber-200/60 text-sm">até a próxima grande sessão</p>
+
                 </div>
               </div>
             </Card>
           </div>
 
-          {/* Featured Films Banner */}
-          <Card className="backdrop-blur-xl bg-black/30 border border-amber-500/20 rounded-3xl p-8">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-6">
-                <div className="flex items-center justify-center w-16 h-16 bg-gradient-to-br from-amber-500/30 to-red-600/30 border border-amber-400/30 rounded-2xl">
-                  <Film className="h-8 w-8 text-amber-400" />
-                </div>
-                <div>
-                  <h3 className="text-2xl font-bold text-white mb-2">Expanda o Acervo de Filmes</h3>
-                  <p className="text-amber-100/80 text-lg mb-3">
-                    Ajude-nos a levar mais histórias e cultura para as comunidades
-                  </p>
-                  <div className="flex items-center space-x-6 text-sm text-amber-200/70">
-                    {[
-                      { dot: "bg-amber-400", label: "Filmes Nacionais" },
-                      { dot: "bg-red-400", label: "Cinema Infantil" },
-                      { dot: "bg-amber-300", label: "Documentários" },
-                      { dot: "bg-red-300", label: "Clássicos" },
-                    ].map((item, idx) => (
-                      <div key={idx} className="flex items-center space-x-2">
-                        <div className={`w-2 h-2 ${item.dot} rounded-full`}></div>
-                        <span>{item.label}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-              <Button className="bg-gradient-to-r from-amber-500 to-red-600 hover:from-amber-600 hover:to-red-700 text-white border-0 transition-all duration-700 ease-out hover:scale-[1.02] px-8 py-6 text-lg font-medium">
-                Contribuir
-                <ChevronRight className="ml-2 h-5 w-5" />
-              </Button>
-            </div>
-          </Card>
+
         </div>
 
         {/* Right Sidebar */}
