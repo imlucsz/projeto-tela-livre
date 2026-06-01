@@ -565,7 +565,26 @@ export async function CinemaDashboard() {
                   </div>
                 </div>
 
-
+                {/* Community Reach */}
+                <div className="space-y-3">
+                  <h4 className="text-white font-medium">Comunidades Atendidas</h4>
+                  <div className="space-y-2">
+                    {communities.map((community, index) => (
+                      <div key={index} className="space-y-1">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-amber-100/80">{community.name}</span>
+                          <span className="text-white">{community.progress}%</span>
+                        </div>
+                        <div className="w-full bg-black/30 rounded-full h-2">
+                          <div
+                            className={`bg-gradient-to-r ${community.color} h-2 rounded-full`}
+                            style={{ width: `${community.progress}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
 
                 {/* Next Event Countdown */}
                 <div className="bg-black/20 rounded-xl p-4 text-center border border-amber-500/10">
