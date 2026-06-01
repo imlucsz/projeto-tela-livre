@@ -108,8 +108,13 @@ async function getMetrics(): Promise<{ totalPeople: number; totalSessions: numbe
   }
 }
 
+const BASE_URL = process.env.NEXTAUTH_URL || 'https://projeto-tela-livre.onrender.com'
+
 export async function CinemaDashboard() {
+  console.log("[DEBUG] CinemaDashboard - start render", new Date().toISOString());
   const session = await auth();
+
+
 
   const isAdmin = session?.user?.role === "ADMIN";
   const isOng = session?.user?.role === "NGO";
@@ -136,10 +141,10 @@ export async function CinemaDashboard() {
   }
 
   try {
-    const impactGoalsRes = await fetch('/api/impact-goals', {
+    const impactGoalsRes = await fetch(`${BASE_URL}/api/impact-goals`, {
       next: { revalidate: 60 },
-      cache: 'force-cache',
     })
+
 
     if (impactGoalsRes.ok) {
       const impactGoalsJson = await impactGoalsRes.json()
@@ -154,10 +159,10 @@ export async function CinemaDashboard() {
   }
 
   try {
-    const nextSessionRes = await fetch('/api/impact-goals/next-session', {
+    const nextSessionRes = await fetch(`${BASE_URL}/api/impact-goals/next-session`, {
       next: { revalidate: 60 },
-      cache: 'force-cache',
     })
+
 
     if (nextSessionRes.ok) {
       const nextSessionJson = await nextSessionRes.json()
@@ -263,10 +268,10 @@ export async function CinemaDashboard() {
 
   const nextEventsThisMonthPromise = (async () => {
     try {
-      const res = await fetch('/api/events/this-month', {
+    const res = await fetch(`${BASE_URL}/api/events/this-month`, {
         next: { revalidate: 60 },
-        cache: 'force-cache',
       })
+
       if (!res.ok) return null
       const json = await res.json()
       if (!json?.success || !json?.data) return null
@@ -281,10 +286,11 @@ export async function CinemaDashboard() {
   // - NGO: somente o que ela postou (aprovadas) = próximos 5 por data
   const nextFiveSessionsPromise = (async () => {
     try {
-      const res = await fetch('/api/events?approved=true', {
+      const res = await fetch(`${BASE_URL}/api/events?approved=true`, {
         next: { revalidate: 60 },
-        cache: 'force-cache',
       })
+
+
       if (!res.ok) return null
       const json = await res.json()
       if (!json?.success || !Array.isArray(json?.data)) return null
