@@ -27,6 +27,9 @@ const eventSchema = z.object({
   address: z.string().max(300).optional().default(""),
   image: z.string().url("URL válida").optional().default(""),
   category: z.enum(["CINEMA", "OFICINAS", "PROJETOS"]).default("CINEMA"),
+  genre: z
+    .enum(["geral", "comedia", "drama", "infantil", "animacao", "documentario", "acao", "romance", "ficcao"])
+    .default("geral"),
 });
 
 type EventFormData = z.infer<typeof eventSchema>;
@@ -40,6 +43,7 @@ interface Event {
   address?: string;
   image?: string;
   category: string;
+  genre?: string;
 }
 
 
@@ -72,11 +76,11 @@ export default function EventCreationForm({
           description: initialEvent.description,
           date: new Date(initialEvent.date).toISOString().split("T")[0],
           time: new Date(initialEvent.date).toTimeString().split(" ")[0],
-location: initialEvent.location,
+          location: initialEvent.location,
           address: initialEvent.address ?? "",
           image: initialEvent.image,
-
           category: (initialEvent.category.toUpperCase() as any) || "CINEMA",
+          genre: (initialEvent.genre as any) || "geral",
         }
       : {
           title: "",
@@ -87,11 +91,22 @@ location: initialEvent.location,
           address: "",
           image: "",
           category: "CINEMA",
+          genre: "geral",
         },
   });
 
   const category = watch("category");
   const imageUrl = watch("image");
+  const genre = watch("genre");
+
+  // Auto-preenchimento de gênero para categorias específicas
+  useEffect(() => {
+    if (category === "OFICINAS" || category === "PROJETOS") {
+      if (genre !== "geral") {
+        setValue("genre", "geral");
+      }
+    }
+  }, [category, genre, setValue]);
 
   const onSubmit = async (data: EventFormData) => {
     setIsLoading(true);
@@ -139,6 +154,18 @@ location: initialEvent.location,
     PROJETOS: "💡 Projetos",
   };
 
+  const genreLabels: Record<string, string> = {
+    geral: "Geral",
+    comedia: "Comédia",
+    drama: "Drama",
+    infantil: "Infantil",
+    animacao: "Animação",
+    documentario: "Documentário",
+    acao: "Ação",
+    romance: "Romance",
+    ficcao: "Ficção Científica",
+  };
+
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       <h3 className="text-xl font-semibold text-white">
@@ -161,6 +188,43 @@ location: initialEvent.location,
           </SelectContent>
         </Select>
         {errors.category && <p className="text-sm text-red-400">{errors.category.message}</p>}
+      </div>
+
+      {/* Gênero */}
+      <div className="space-y-2">
+        <Label htmlFor="genre" className="text-amber-200">
+          Gênero {category === "CINEMA" ? <span className="text-red-500">*</span> : ""}
+        </Label>
+        <Select 
+          value={genre} 
+          onValueChange={(value) => setValue("genre", value as any)}
+          disabled={category !== "CINEMA"}
+        >
+          <SelectTrigger 
+            id="genre" 
+            className={`bg-black/20 border-amber-500/20 text-white ${
+              category !== "CINEMA" ? "opacity-50 cursor-not-allowed" : ""
+            }`}
+          >
+            <SelectValue placeholder="Selecione um gênero" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="geral">{genreLabels.geral}</SelectItem>
+            {category === "CINEMA" && (
+              <>
+                <SelectItem value="comedia">{genreLabels.comedia}</SelectItem>
+                <SelectItem value="drama">{genreLabels.drama}</SelectItem>
+                <SelectItem value="infantil">{genreLabels.infantil}</SelectItem>
+                <SelectItem value="animacao">{genreLabels.animacao}</SelectItem>
+                <SelectItem value="documentario">{genreLabels.documentario}</SelectItem>
+                <SelectItem value="acao">{genreLabels.acao}</SelectItem>
+                <SelectItem value="romance">{genreLabels.romance}</SelectItem>
+                <SelectItem value="ficcao">{genreLabels.ficcao}</SelectItem>
+              </>
+            )}
+          </SelectContent>
+        </Select>
+        {errors.genre && <p className="text-sm text-red-400">{errors.genre.message}</p>}
       </div>
 
       {/* Título */}

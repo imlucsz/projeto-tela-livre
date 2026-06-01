@@ -594,12 +594,6 @@ export async function CinemaDashboard() {
                   Gerar Ingressos
                 </Button>
               </Link>
-              <Link href="/dashboard/movies/new">
-                <Button className="w-full justify-start bg-black/20 hover:bg-black/30 border border-amber-500/10 text-amber-100 h-11">
-                  <Film className="mr-3 h-5 w-5 text-amber-400" />
-                  Adicionar Filme
-                </Button>
-              </Link>
               <Link href="/dashboard/settings">
                 <Button className="w-full justify-start bg-black/20 hover:bg-black/30 border border-amber-500/10 text-amber-100 h-11">
                   <Users className="mr-3 h-5 w-5 text-amber-400" />
