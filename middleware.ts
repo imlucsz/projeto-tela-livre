@@ -12,8 +12,15 @@ export default auth((req) => {
   const isLoginPage = req.nextUrl.pathname === '/login'
   const isRegisterPage = req.nextUrl.pathname === '/register'
 
+  console.log("[MIDDLEWARE] Path:", req.nextUrl.pathname, {
+    isDashboard: isDashboardRoute,
+    hasAuth: !!req.auth,
+    userRole: (req.auth?.user as any)?.role
+  });
+
   // ✅ Se tá logado e tenta ir para login/register → redireciona para home
   if ((isLoginPage || isRegisterPage) && req.auth) {
+    console.log("[MIDDLEWARE] Logged in user trying login/register - redirecting to /");
     return NextResponse.redirect(new URL('/', req.url))
   }
 
@@ -21,6 +28,7 @@ export default auth((req) => {
   // - Se tá logado: passa adiante (página valida role com auth() server-side)
   // - Se não tá logado: redireciona para login
   if ((isDashboardRoute || isProfileRoute) && !req.auth) {
+    console.log("[MIDDLEWARE] Not logged in - redirecting to /login");
     return NextResponse.redirect(new URL('/login', req.url))
   }
 
