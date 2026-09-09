@@ -13,6 +13,12 @@ dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
  */
 async function makeAdmin() {
   try {
+    const adminPassword = process.env.ADMIN_PASSWORD;
+
+    if (!adminPassword) {
+      throw new Error('ADMIN_PASSWORD não está definido. Configure a variável de ambiente antes de executar este script.');
+    }
+
     console.log('🔗 Conectando ao banco de dados...');
     await connectDB();
     console.log('✅ Conectado!\n');
@@ -30,7 +36,7 @@ async function makeAdmin() {
       const newUser = await User.create({
         name: 'Lucas Admin',
         email: email.toLowerCase().trim(),
-        password: '@FatecSenha123', // Mude isso depois!
+        password: adminPassword,
         role: UserRole.ADMIN
       });
       
@@ -39,8 +45,7 @@ async function makeAdmin() {
       console.log(`👤 Role: ${newUser.role}`);
       console.log(`\n🔑 Credenciais para Login:`);
       console.log(`   Email: ${email}`);
-      console.log(`   Senha: senha123456`);
-      console.log(`\n⚠️  MUDE A SENHA APÓS PRIMEIRO LOGIN!\n`);
+      console.log(`\n⚠️  Troque a senha após primeiro login.\n`);
     } else {
       console.log(`✅ Usuário encontrado!\n`);
       console.log(`📧 Email: ${user.email}`);
